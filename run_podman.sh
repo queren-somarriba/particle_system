@@ -1,0 +1,41 @@
+#!/bin/bash
+
+IMAGE_NAME="ps-ubuntu"
+CONTAINER_NAME="ps-container"
+
+# 1. Créer l'image si elle n'existe pas
+if [[ "$(podman images -q $IMAGE_NAME 2> /dev/null)" == "" ]]; then
+    echo "Construction de l'image de dev..."
+    # On crée un Dockerfile temporaire
+    cat <<EOF > Dockerfile.ps
+FROM ubuntu:22.04
+ENV DEBIAN_FRONTEND=noninteractive
+RUN apt-get update && apt-get install -y \
+    build-essential cmake zsh git \
+    libglfw3-dev libglew-dev libglm-dev \
+    libgl1-mesa-dev libx11-dev libxrandr-dev \
+    libxinerama-dev libxcursor-dev libxi-dev mesa-utils
+EOF
+    podman build -t $IMAGE_NAME -f Dockerfile.ps
+    rm Dockerfile.ps
+fi
+
+# 2. Lancer le conteneur s'il n'existe pas déjà
+if ! podman ps -a --format "{{.Names}}" | grep -q "$CONTAINER_NAME"; then
+    echo "Création du conteneur..."
+    podman create \
+        --name "$CONTAINER_NAME" \
+        --env DISPLAY=$DISPLAY \
+        --device /dev/dri:/dev/dri \
+        --volume /tmp/.X11-unix:/tmp/.X11-unix:ro \
+        --volume $XAUTHORITY:/root/.Xauthority:ro \
+        --env XAUTHORITY=/root/.Xauthority \
+        --volume "$(pwd):$(pwd):Z" \
+        --workdir "$(pwd)" \
+        --net=host \
+        -it $IMAGE_NAME zsh
+    fi
+
+# 3. Démarrer et entrer
+podman start "$CONTAINER_NAME"
+podman exec -it "$CONTAINER_NAME" zsh
