@@ -4,26 +4,26 @@
 
 namespace
 {
-/* 	void InputMoveCam(GLFWwindow *window, AppState& state)
+	void InputMoveCam(GLFWwindow *window, AppState& state)
 	{
 		if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
-			state.camera.ProcessKeyboard(FORWARD, state.movementSpeed);
+			state.camera.ProcessKeyboard(FORWARD, state.deltaTime);
 		if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)
-			state.camera.ProcessKeyboard(BACKWARD, state.movementSpeed);
+			state.camera.ProcessKeyboard(BACKWARD, state.deltaTime);
 		if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS)
-			state.camera.ProcessKeyboard(LEFT, state.movementSpeed);
+			state.camera.ProcessKeyboard(RIGHT, state.deltaTime);
 		if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
-			state.camera.ProcessKeyboard(RIGHT, state.movementSpeed);
+			state.camera.ProcessKeyboard(LEFT, state.deltaTime);
 		if (glfwGetKey(window, GLFW_KEY_UP) == GLFW_PRESS)
-			state.camera.ProcessKeyboard(UP, state.movementSpeed);
+			state.camera.ProcessKeyboard(UP, state.deltaTime);
 		if (glfwGetKey(window, GLFW_KEY_DOWN) == GLFW_PRESS)
-			state.camera.ProcessKeyboard(DOWN, state.movementSpeed);
-	} */
+			state.camera.ProcessKeyboard(DOWN, state.deltaTime);
+	}
 }
 
 void processInput(GLFWwindow *window, psData& data)
 {
-	//InputMoveCam(window, data.state);
+	InputMoveCam(window, data.state);
 
 	if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
 		glfwSetWindowShouldClose(window, true);
@@ -56,10 +56,31 @@ void cursor_position_callback(GLFWwindow* window, double xpos, double ypos)
 {
 	psData* data = reinterpret_cast<psData*>(glfwGetWindowUserPointer(window));
 
+	float x = data->state.gCenter.x;
+	float y = data->state.gCenter.y;
+
 	glfwGetCursorPos(window, &xpos, &ypos);
 	if (xpos >= 0.f && xpos <= static_cast<double>(WIDTH))
-		data->state.gCenter.x = (static_cast<float>(xpos) - static_cast<float>(WIDTH) * 0.5) / static_cast<float>(WIDTH);
+		x = ( 2.f * static_cast<float>(xpos) / static_cast<float>(WIDTH)) - 1.f;
 
 	if (ypos >= 0.f && ypos <= static_cast<double>(HEIGHT))
-		data->state.gCenter.y = (static_cast<float>(HEIGHT) * 0.5f - static_cast<float>(ypos))  / static_cast<float>(HEIGHT);
+		y = 1.f -(2.f * static_cast<float>(ypos)  / static_cast<float>(HEIGHT));
+
+	vect4f mouseVect = vect4f(x, y, 0.5, 1.f);
+
+	mat4f view = data->state.camera.GetViewMatrix();
+	mat4f projection = mat4f::perspective(data->state.camera.zoom, (float)WIDTH/HEIGHT, 0.1f,
+													data->state.camera.pos.z);	
+	mat4f invWorld = (projection * view).inverse();
+
+	vect4f worldPos = invWorld * mouseVect;
+
+	if (worldPos.w != 0.0f)
+	{
+		worldPos.x /= worldPos.w;
+		worldPos.y /= worldPos.w;
+		worldPos.z /= worldPos.w;
+	}
+
+	data->state.gCenter = worldPos;
 }

@@ -70,10 +70,12 @@ namespace
 
 	void setUniformVal(psData& data)
 	{
+		mat4f view = data.state.camera.GetViewMatrix();
 		mat4f projection = mat4f::perspective(data.state.camera.zoom, (float)WIDTH/HEIGHT, 0.1f,
 														data.state.camera.pos.z);	
 		data.shader->use();
-		data.shader->setMat4("projection", projection);	
+		data.shader->setMat4("projection", projection);
+		data.shader->setMat4("view", view);
 	}
 }
 
@@ -106,18 +108,12 @@ void updateParticles(psData& data)
 		gpuVector.push_back(p.color.x);
 		gpuVector.push_back(p.color.y);
 		gpuVector.push_back(p.color.z);
-		// gpuVector.push_back(p.vel.x);
-		// gpuVector.push_back(p.vel.y);
-		// gpuVector.push_back(p.mass);
-		// gpuVector.push_back(p.gDist);
 	}
 	data.vao.bind();
 	data.vbo = std::make_unique<VBO>(gpuVector.data(), gpuVector.size() * sizeof(float));
 
 	data.vao.linkAttrib(*data.vbo, 0, 3, GL_FLOAT, 6 * sizeof(float), (void*)0);
 	data.vao.linkAttrib(*data.vbo, 1, 3, GL_FLOAT, 6 * sizeof(float), (void*)(3 * sizeof(float)));
-	// data.vao.linkAttrib(*data.vbo, 2, 3, GL_FLOAT, 10 * sizeof(float), (void*)8);
-	// data.vao.linkAttrib(*data.vbo, 1, 1, GL_FLOAT, 4 * sizeof(float), (void*)4);
 
 	data.vao.unbind();
 	data.vbo->unbind();
@@ -126,13 +122,14 @@ void updateParticles(psData& data)
 void renderParticles(GLFWwindow* window, psData& data)
 {
 
+	processInput(window, data);
 	updateAppState(window, data.state);
 
-	processInput(window, data);
 	glClearColor(0.07f, 0.07f, 0.17f, 1.0f);
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 	setUniformVal(data);
+	updateParticles(data);
 
 	data.vao.bind();
 	glDrawArrays(GL_POINTS, 0,  data.particle_number);

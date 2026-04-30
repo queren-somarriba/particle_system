@@ -17,7 +17,7 @@ constexpr static float YAW			= -(M_PI / 2.f);
 constexpr static float PITCH		= 0.f;
 constexpr static float SPEED		= 2.5f;
 constexpr static float SENSITIVITY	= 0.001f;
-constexpr static float ZOOM			= 45.f;
+constexpr static float ZOOM			= 41.f;
 
 class Camera
 {

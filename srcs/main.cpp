@@ -38,21 +38,13 @@ void setupData(psData& data, const char* argv1)
 		gpuVector.push_back(p.color.x);
 		gpuVector.push_back(p.color.y);
 		gpuVector.push_back(p.color.z);
-		// gpuVector.push_back(p.vel.x);
-		// gpuVector.push_back(p.vel.y);
-		// gpuVector.push_back(p.vel.z);
-		// gpuVector.push_back(p.mass);
-		// gpuVector.push_back(p.gDist);
-
 	}
 	data.vao.bind();
 	data.vbo = std::make_unique<VBO>(gpuVector.data(), gpuVector.size() * sizeof(float));
 
 	data.vao.linkAttrib(*data.vbo, 0, 3, GL_FLOAT, 6 * sizeof(float), (void*)0);
 	data.vao.linkAttrib(*data.vbo, 1, 3, GL_FLOAT, 6 * sizeof(float), (void*)(3 * sizeof(float)));
-	// data.vao.linkAttrib(*data.vbo, 2, 3, GL_FLOAT, 10 * sizeof(float), (void*)7);
-	// data.vao.linkAttrib(*data.vbo, 1, 1, GL_FLOAT, 4 * sizeof(float), (void*)4);
-	
+
 	data.vao.unbind();
 	data.vbo->unbind();
 
@@ -82,10 +74,7 @@ int main(int argc, char** argv)
 			glfwSetWindowUserPointer(window, &data);
 
 			while (!glfwWindowShouldClose(window))
-			{
-				updateParticles(data);
 				renderParticles(window, data);
-			}
 		}
 
 		glfwDestroyWindow(window);

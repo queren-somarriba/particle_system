@@ -38,7 +38,6 @@ struct AppState
 	vect4f	gCenter;
 	float	deltaTime;
 	float	lastFrame;
-	float	movementSpeed;
 	float	second;
 	float	G;
 	size_t	fpsCounter;
