@@ -4,7 +4,6 @@
 #include <GLFW/glfw3.h>
 #include <vector>
 #include "camera.hpp"
-// #include <cstdlib>
 #include <ctime>
 #include "particle_system.hpp"
 #include "callback.hpp"
@@ -23,9 +22,11 @@ void setupData(psData& data, const char* argv1)
 	{
 		Particle p;
 		p.pos = vect4f(randf() * 2.f - 1.f, randf() * 2.f - 1.f, randf() * 2.f - 1.f);
-		p.color = vect4f(1.f, 0.f, 1.f);
 		p.vel = vect4f(randf() * 2.f - 1.f, randf() * 2.f - 1.f, randf() * 2.f - 1.f);
 		p.mass = 1.f;
+		vect4f gdir = data.state.gCenter - p.pos;
+		p.gDist = gdir.length();
+		p.color = vect4f(p.gDist, p.gDist * 0.5f, 0.f);
 		data.particles.push_back(p);
 	}
 	std::vector<float>	gpuVector;
@@ -37,18 +38,20 @@ void setupData(psData& data, const char* argv1)
 		gpuVector.push_back(p.color.x);
 		gpuVector.push_back(p.color.y);
 		gpuVector.push_back(p.color.z);
-		gpuVector.push_back(p.vel.x);
-		gpuVector.push_back(p.vel.y);
-		gpuVector.push_back(p.vel.z);
-		gpuVector.push_back(p.mass);
+		// gpuVector.push_back(p.vel.x);
+		// gpuVector.push_back(p.vel.y);
+		// gpuVector.push_back(p.vel.z);
+		// gpuVector.push_back(p.mass);
+		// gpuVector.push_back(p.gDist);
+
 	}
 	data.vao.bind();
 	data.vbo = std::make_unique<VBO>(gpuVector.data(), gpuVector.size() * sizeof(float));
 
-	data.vao.linkAttrib(*data.vbo, 0, 3, GL_FLOAT, 10 * sizeof(float), (void*)0);
-	data.vao.linkAttrib(*data.vbo, 1, 3, GL_FLOAT, 10 * sizeof(float), (void*)4);
-	data.vao.linkAttrib(*data.vbo, 2, 3, GL_FLOAT, 10 * sizeof(float), (void*)8);
-	data.vao.linkAttrib(*data.vbo, 3, 1, GL_FLOAT, 10 * sizeof(float), (void*)10);
+	data.vao.linkAttrib(*data.vbo, 0, 3, GL_FLOAT, 6 * sizeof(float), (void*)0);
+	data.vao.linkAttrib(*data.vbo, 1, 3, GL_FLOAT, 6 * sizeof(float), (void*)(3 * sizeof(float)));
+	// data.vao.linkAttrib(*data.vbo, 2, 3, GL_FLOAT, 10 * sizeof(float), (void*)7);
+	// data.vao.linkAttrib(*data.vbo, 1, 1, GL_FLOAT, 4 * sizeof(float), (void*)4);
 	
 	data.vao.unbind();
 	data.vbo->unbind();
@@ -75,6 +78,8 @@ int main(int argc, char** argv)
 		{
 			psData data = {};
 			setupData(data, argv[1]);
+
+			glfwSetWindowUserPointer(window, &data);
 
 			while (!glfwWindowShouldClose(window))
 			{
