@@ -6,7 +6,7 @@ class VBO
 {
 	public:
 		GLuint	id;
-				VBO(GLfloat* vertices, GLsizeiptr size);
+				VBO(GLfloat* vertices, GLsizeiptr size, GLenum data);
 				~VBO();
 				VBO(const VBO&) = delete;
 		VBO&	operator=(const VBO&) = delete;

@@ -1,10 +1,10 @@
 #include "VBO.hpp"
 
-VBO::VBO(GLfloat* vertices, GLsizeiptr size) : id(0)
+VBO::VBO(GLfloat* vertices, GLsizeiptr size, GLenum data) : id(0)
 {
 	glGenBuffers(1, &(this->id));
 	glBindBuffer(GL_ARRAY_BUFFER, this->id);
-	glBufferData(GL_ARRAY_BUFFER, size, vertices, GL_STATIC_DRAW);
+	glBufferData(GL_ARRAY_BUFFER, size, vertices, data);
 }
 
 VBO::~VBO()

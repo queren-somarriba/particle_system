@@ -119,6 +119,9 @@ inline float	vect4f::lengthSq() const
 /* Newton-Raphson */
 inline vect4f	vect4f::normalize() const
 {
+	if (this->lengthSq() < 1e-6f)
+		return vect4f(0.f, 0.f, 0.f);
+	
 	__m128 va = _mm_set1_ps(dot(this->mm));
 	__m128 v0 = _mm_rsqrt_ps(va); 
 

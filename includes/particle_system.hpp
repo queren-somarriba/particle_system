@@ -12,7 +12,7 @@
 
 const int	WIDTH = 800;
 const int	HEIGHT = 800;
-const float	G = 500.0f;
+const float	G = 2.0f;
 const float	POINT_SIZE = 2.0f;
 const float	TRAIL_ALPHA = 0.04f;
 
@@ -32,17 +32,26 @@ struct Particle
 	float	gDist;
 };
 
+enum Shape
+{
+	CUBE,
+	SPHERE
+};
+
 struct AppState
 {
 	Camera	camera;
+	mat4f	invWorld;
 	vect4f	gCenter;
 	float	deltaTime;
 	float	lastFrame;
 	float	second;
 	float	G;
 	size_t	fpsCounter;
+	Shape  shape = CUBE;
 	bool	space_pressed;
 	bool	gravity;
+	bool  r_pressed = false;
 	
 	AppState() : 
 		camera(vect4f(0.0f, 0.0f, 3.0f)),

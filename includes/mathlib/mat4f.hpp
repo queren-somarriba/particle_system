@@ -130,9 +130,10 @@ class alignas(16) mat4f
 			);
 		}
 
-		static inline mat4f perspective(float fov, float aspect, float near, float far)
+		static inline mat4f perspective(float fov, float aspect, float near)
 		{
 			float f = 1.0f / std::tan(fov * 0.5f);
+			float far = 10.f;
 			float nf = 1.0f / (near - far);
 
 			return mat4f(
