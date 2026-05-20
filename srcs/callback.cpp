@@ -12,9 +12,9 @@ namespace
 		if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)
 			state.camera.ProcessKeyboard(BACKWARD, state.deltaTime);
 		if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS)
-			state.camera.ProcessKeyboard(RIGHT, state.deltaTime);
-		if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
 			state.camera.ProcessKeyboard(LEFT, state.deltaTime);
+		if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
+			state.camera.ProcessKeyboard(RIGHT, state.deltaTime);
 		if (glfwGetKey(window, GLFW_KEY_UP) == GLFW_PRESS)
 			state.camera.ProcessKeyboard(UP, state.deltaTime);
 		if (glfwGetKey(window, GLFW_KEY_DOWN) == GLFW_PRESS)
@@ -25,10 +25,10 @@ namespace
 void processInput(GLFWwindow *window, psData& data)
 {
 	InputMoveCam(window, data.state);
-
+	/* Escape */
 	if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
 		glfwSetWindowShouldClose(window, true);
-
+	/* Space */
 	if (glfwGetKey(window, GLFW_KEY_SPACE) == GLFW_PRESS && !data.state.space_pressed)
 	{
 		data.state.gravity = !data.state.gravity;
@@ -36,7 +36,7 @@ void processInput(GLFWwindow *window, psData& data)
 	}
 	if (glfwGetKey(window, GLFW_KEY_SPACE) == GLFW_RELEASE)
 		data.state.space_pressed = false;
-
+	/* R */
 	if (glfwGetKey(window, GLFW_KEY_R) == GLFW_PRESS && !data.state.r_pressed)
 	{
 		data.state.shape = (data.state.shape == CUBE) ? SPHERE : CUBE;
@@ -45,6 +45,28 @@ void processInput(GLFWwindow *window, psData& data)
 	}
 	if (glfwGetKey(window, GLFW_KEY_R) == GLFW_RELEASE)
 		data.state.r_pressed = false;
+	/* E */
+	if (glfwGetKey(window, GLFW_KEY_E) == GLFW_PRESS && !data.state.e_pressed)
+	{
+		data.state.e_pressed = true;
+	}
+	if (glfwGetKey(window, GLFW_KEY_E) == GLFW_RELEASE)
+		data.state.e_pressed = false;
+	/* L */
+	if (glfwGetKey(window, GLFW_KEY_L) == GLFW_PRESS && !data.state.l_pressed)
+	{
+		data.state.immortal = !data.state.immortal;
+		data.state.l_pressed = true;
+	}
+	if (glfwGetKey(window, GLFW_KEY_L) == GLFW_RELEASE)
+		data.state.l_pressed = false;
+	/* T */
+	if (glfwGetKey(window, GLFW_KEY_T) == GLFW_PRESS && !data.state.t_pressed)
+	{
+		data.state.t_pressed = true;
+	}
+	if (glfwGetKey(window, GLFW_KEY_T) == GLFW_RELEASE)
+		data.state.t_pressed = false;
 }
 
 void framebuffer_size_callback(GLFWwindow* window, int width, int height)
@@ -62,11 +84,24 @@ void scroll_callback(GLFWwindow* window, double xoffset, double yoffset)
 		data->state.G += static_cast<float>(yoffset);
 }
 
+void cursor_enter_callback(GLFWwindow* window, int entered)
+{
+	psData* data = reinterpret_cast<psData*>(glfwGetWindowUserPointer(window));
+	if (entered)
+		data->state.mouse_in_window = true;
+	else
+		data->state.mouse_in_window = false;
+}
+
 void cursor_position_callback(GLFWwindow* window, double xpos, double ypos)
 {
 	psData* data = reinterpret_cast<psData*>(glfwGetWindowUserPointer(window));
 
-	float x, y;
+	if (!data->state.mouse_in_window)
+		return;
+
+	float x = 0;
+	float y = 0;
 
 	glfwGetCursorPos(window, &xpos, &ypos);
 	if (xpos >= 0.f && xpos <= static_cast<double>(WIDTH))
@@ -77,23 +112,7 @@ void cursor_position_callback(GLFWwindow* window, double xpos, double ypos)
 
 	x = std::max(-1.0f, std::min(1.0f, x));
 	y = std::max(-1.0f, std::min(1.0f, y));
-	//std::cout << "Worldmouse: (" << x << ", " << y << ")\n";
 
-	// vect4f mouseVect = vect4f(x, y, 0.95f , 1.f);
-
-	// std::cout << "invWorld: " << data->state.invWorld << std::endl;
-
-	// vect4f worldPos = data->state.invWorld * mouseVect;
-
-	// if (worldPos.w != 0.0f)
-	// {
-	// 	worldPos.x /= worldPos.w;
-	// 	worldPos.y /= worldPos.w;
-	// 	worldPos.z /= worldPos.w;
-	// }
-
-	// data->state.gCenter = worldPos;
-	// std::cout << "gCenter: " << data->state.gCenter << std::endl;
 	vect4f mouseVect = vect4f(x, y, 0.f, 1.f);
 	vect4f worldPos = data->state.invWorld * mouseVect;
 
@@ -101,8 +120,7 @@ void cursor_position_callback(GLFWwindow* window, double xpos, double ypos)
 	{
 		worldPos.x /= worldPos.w;
 		worldPos.y /= worldPos.w;
-		worldPos.z /= worldPos.w;
-		worldPos.w  = 0.f;
+		worldPos.z = data->state.gCenter.z;
 	}
-	data->state.gCenter = worldPos;
+	data->state.targetCenter = worldPos;
 }

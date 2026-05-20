@@ -1,4 +1,4 @@
-NAME	= particule_system
+NAME	= particle_system
 CC		= c++
 
 DEBUG	= 1
@@ -10,7 +10,7 @@ ORANGE	= \033[1;33m
 RESET	= \033[0m
 
 ifeq ($(DEBUG), 1)
-	CXXFLAGS	= -Wall -Wextra -Werror -g -march=native -fsanitize=address -fno-omit-frame-pointer
+	CXXFLAGS	= -Wall -Wextra -Werror -g -march=native -fsanitize=address -fsanitize=undefined -fno-omit-frame-pointer
 	LDFLAGS		= -fsanitize=address
 else
 	CXXFLAGS	= -Wall -Wextra -Werror -O3 -march=native

@@ -16,6 +16,25 @@
 #include "renderer.hpp"
 #include "shape.hpp"
 
+void setupGpuData(psData& data, std::vector<float> gpuVector)
+{
+	gpuVector.reserve(data.particle_number * 6);
+	
+	for(const Particle& p : data.particles)
+	{
+		gpuVector.push_back(p.pos.x);
+		gpuVector.push_back(p.pos.y);
+		gpuVector.push_back(p.pos.z);
+		gpuVector.push_back(p.color.x);
+		gpuVector.push_back(p.color.y);
+		gpuVector.push_back(p.color.z);
+	}
+
+	data.vbo->bind();
+	glBufferSubData(GL_ARRAY_BUFFER, 0, gpuVector.size() * sizeof(float), gpuVector.data());
+	data.vbo->unbind();
+}
+
 void setupData(psData& data, const char* argv1)
 {
 	data.particle_number = std::stoi(argv1);

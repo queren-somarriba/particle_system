@@ -11,10 +11,11 @@ if [[ "$(podman images -q $IMAGE_NAME 2> /dev/null)" == "" ]]; then
 FROM ubuntu:22.04
 ENV DEBIAN_FRONTEND=noninteractive
 RUN apt-get update && apt-get install -y \
-    build-essential cmake zsh git \
-    libglfw3-dev libglew-dev libglm-dev \
+    build-essential zsh git libglfw3-dev \
     libgl1-mesa-dev libx11-dev libxrandr-dev \
-    libxinerama-dev libxcursor-dev libxi-dev mesa-utils
+    libxinerama-dev libxcursor-dev libxi-dev mesa-utils \
+    opencl-headers ocl-icd-opencl-dev clinfo \
+    mesa-opencl-icd intel-opencl-icd
 EOF
     podman build -t $IMAGE_NAME -f Dockerfile.ps
     rm Dockerfile.ps
@@ -27,12 +28,15 @@ if ! podman ps -a --format "{{.Names}}" | grep -q "$CONTAINER_NAME"; then
         --name "$CONTAINER_NAME" \
         --env DISPLAY=$DISPLAY \
         --device /dev/dri:/dev/dri \
+        --security-opt label=disable \
         --volume /tmp/.X11-unix:/tmp/.X11-unix:ro \
         --volume $XAUTHORITY:/root/.Xauthority:ro \
         --env XAUTHORITY=/root/.Xauthority \
         --volume "$(pwd):$(pwd):Z" \
         --workdir "$(pwd)" \
         --net=host \
+        --ipc=host \
+        --group-add keep-groups \
         -it $IMAGE_NAME zsh
     fi
 
