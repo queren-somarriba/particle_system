@@ -7,6 +7,18 @@
 #include "shader.hpp"
 #include <vector>
 #include <memory>
+#include <GL/glx.h>
+
+#ifndef CL_TARGET_OPENCL_VERSION
+    #define CL_TARGET_OPENCL_VERSION 200
+#endif
+
+#ifdef __APPLE__
+    #include <OpenCL/opencl.h>
+#else
+    #include <CL/cl.h>
+    #include <CL/cl_gl.h>
+#endif
 
 /* CONST*/
 
@@ -96,11 +108,20 @@ struct AppState
 struct psData
 {
 	std::vector<Particle>	particles;
+	std::vector<float>		gpuVector;
 	AppState				state;
 	VAO						vao;
 	std::unique_ptr<VBO>	vbo;
 	std::unique_ptr<Shader> shader;
 	unsigned int			particle_number;
+	cl_platform_id			platform;
+	cl_device_id			device;
+	cl_context				context;
+	cl_command_queue		queue;
+	cl_program				program;
+	cl_kernel				kernel;
+	cl_mem					cl_vbo_mem;
+	cl_mem					cl_vel_mem;
 };
 
 void setupGpuData(psData& data, std::vector<float> gpuVector);

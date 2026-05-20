@@ -3,7 +3,7 @@
 
 namespace
 {
-	void initVel(Particle& p, const vect4f& gCenter)
+	void computeVel(Particle& p, const vect4f& gCenter)
 	{
 		vect4f dir = p.pos - gCenter;
 		float dlen = dir.length();
@@ -26,6 +26,15 @@ namespace
 		p.vel = tangent * speed;
 	}
 }
+// clEnqueueWriteBuffer(
+//     queue, 
+//     cl_velocities_mem, 
+//     CL_TRUE, // Bloquant (on attend que la copie soit finie)
+//     0,       // Offset
+//     NUM_PARTICLES * 4 * sizeof(float), 
+//     initial_velocities.data(), 
+//     0, nullptr, nullptr
+// );
 
 void initCube(std::vector<Particle>& particles, unsigned int n, const vect4f& gCenter)
 {
@@ -37,7 +46,7 @@ void initCube(std::vector<Particle>& particles, unsigned int n, const vect4f& gC
 			(randf() * 2.f - 1.f) * 0.5f,
 			(randf() * 2.f - 1.f) * 0.5f
 		);
-		initVel(p, gCenter);
+		computeVel(p, gCenter);
 		p.mass = 1.f;
 		vect4f gdir = gCenter - p.pos;
 		p.gDist = gdir.length();
@@ -65,7 +74,7 @@ void initSphere(std::vector<Particle>& particles, unsigned int n, const vect4f& 
 		while (pos.length() > 0.5f);
 
 		p.pos = pos;
-		initVel(p, gCenter);
+		computeVel(p, gCenter);
 		p.mass = 1.f;
 		vect4f gdir = gCenter - p.pos;
 		p.gDist = gdir.length();
@@ -84,6 +93,5 @@ void resetParticles(psData& data)
 	else
 		initSphere(data.particles, data.particle_number, data.state.gCenter);
 
-	std::vector<float> gpuVector;
-	setupGpuData(data, gpuVector);
+	setupGpuData(data, data.gpuVector);
 }

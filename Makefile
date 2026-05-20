@@ -26,6 +26,7 @@ OBJ_DIR				= obj
 SRCS_DIR			= srcs
 CLASS_CPP			= $(SRCS_DIR)/class
 GLFLAGS				= -lglfw -lGL -lX11 -lpthread -ldl -lXrandr -lXinerama -lXcursor -lXi
+CLFLAGS				= -lOpenCL
 
 SRCS		= $(SRCS_DIR)/main.cpp \
 			$(SRCS_DIR)/callback.cpp \
@@ -38,7 +39,8 @@ SRCS		= $(SRCS_DIR)/main.cpp \
 			$(CLASS_CPP)/VAO.cpp \
 			$(CLASS_CPP)/shader.cpp \
 			$(CLASS_CPP)/texture.cpp \
-			$(CLASS_CPP)/camera.cpp 
+			$(CLASS_CPP)/camera.cpp \
+			$(SRCS_DIR)/cl.cpp
 
 OBJS		= $(SRCS:$(SRCS_DIR)/%.cpp=$(OBJ_DIR)/%.o)
 
@@ -51,7 +53,7 @@ $(OBJ_DIR)/%.o: $(SRCS_DIR)/%.cpp
 
 $(NAME): $(OBJS)
 	@echo "$(BLUE)Linking $(NAME)...$(RESET)"
-	@$(CC) $(CXXFLAGS) $(OBJS) -o $(NAME) $(LDFLAGS) $(GLFLAGS)
+	@$(CC) $(CXXFLAGS) $(OBJS) -o $(NAME) $(LDFLAGS) $(GLFLAGS) $(CLFLAGS)
 	@echo "$(GREEN)Done! Binary $(NAME) is ready.$(RESET)"
 
 clean:

@@ -6,6 +6,7 @@
 #include "particle_system.hpp"
 #include "callback.hpp"
 #include "utils.hpp"
+#include "cl.hpp"
 
 GLFWwindow* initWindow()
 {
@@ -193,8 +194,8 @@ namespace
 	void updateParticles(psData& data)
 	{
 		const float G = (data.state.gravity ? data.state.G : 0.f);
-		const float softening = 0.5f;
-		const float dampling = 0.995f;
+		// const float softening = 0.5f;
+		// const float dampling = 0.995f;
 		const float dt = data.state.deltaTime;
 
 		for (Particle& p : data.particles)
@@ -264,60 +265,80 @@ void updateParticleSystem(psData& data)
 
 	updateParticles(data);
 
-	std::vector<float>	gpuVector;
-	setupGpuData(data, gpuVector);
+	setupGpuData(data, data.gpuVector);
 }
 
-void renderGravityCenter(psData& data)
-{
-	float gx = data.state.gCenter.x;
-	float gy = data.state.gCenter.y;
-	float gz = data.state.gCenter.z;
+// void renderGravityCenter(psData& data)
+// {
+// 	float gx = data.state.gCenter.x;
+// 	float gy = data.state.gCenter.y;
+// 	float gz = data.state.gCenter.z;
 
-	float vertex[] = {
-		gx, gy, gz,
-		0.f, 0.f, 0.f
-	};
+// 	float vertex[] = {
+// 		gx, gy, gz,
+// 		0.f, 0.f, 0.f
+// 	};
 
-	GLuint vao, vbo;
-	glGenVertexArrays(1, &vao);
-	glGenBuffers(1, &vbo);
+// 	GLuint vao, vbo;
+// 	glGenVertexArrays(1, &vao);
+// 	glGenBuffers(1, &vbo);
 
-	glBindVertexArray(vao);
-	glBindBuffer(GL_ARRAY_BUFFER, vbo);
-	glBufferData(GL_ARRAY_BUFFER, sizeof(vertex), vertex, GL_STATIC_DRAW);
+// 	glBindVertexArray(vao);
+// 	glBindBuffer(GL_ARRAY_BUFFER, vbo);
+// 	glBufferData(GL_ARRAY_BUFFER, sizeof(vertex), vertex, GL_STATIC_DRAW);
 
-	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)0);
-	glEnableVertexAttribArray(0);
-	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)(3 * sizeof(float)));
-	glEnableVertexAttribArray(1);
+// 	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)0);
+// 	glEnableVertexAttribArray(0);
+// 	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)(3 * sizeof(float)));
+// 	glEnableVertexAttribArray(1);
 
-	float prevSize;
-	glGetFloatv(GL_POINT_SIZE, &prevSize);
-	glPointSize(6.f);
+// 	float prevSize;
+// 	glGetFloatv(GL_POINT_SIZE, &prevSize);
+// 	glPointSize(6.f);
 
-	data.shader->use();
-	glDrawArrays(GL_POINTS, 0, 1);
+// 	data.shader->use();
+// 	glDrawArrays(GL_POINTS, 0, 1);
 
-	glPointSize(prevSize);
+// 	glPointSize(prevSize);
 
-	glBindVertexArray(0);
-	glDeleteBuffers(1, &vbo);
-	glDeleteVertexArrays(1, &vao);
-}
+// 	glBindVertexArray(0);
+// 	glDeleteBuffers(1, &vbo);
+// 	glDeleteVertexArrays(1, &vao);
+// }
 
 void renderParticles(GLFWwindow* window, psData& data)
 {
 	processInput(window, data);
 	updateAppState(window, data.state);
 
+	clSetKernelArg(kernel, 0, sizeof(cl_mem), &data.cl_vbo_mem);
+	clSetKernelArg(kernel, 1, sizeof(cl_mem), &data.cl_vel_mem);
+	clSetKernelArg(kernel, 2, sizeof(vect4f), &data.state.gCenter);
+	clSetKernelArg(kernel, 3, sizeof(float), &data.state.deltaTime);
+	// clSetKernelArg(kernel, 2, sizeof(float), &data.state.G);
+	// clSetKernelArg(kernel, 3, sizeof(bool), &data.state.gravity);
+	// clSetKernelArg(kernel, 4, sizeof(bool), &data.state.immortal);
+	// clSetKernelArg(kernel, 6, sizeof(vect4f), &data.state.targetCenter);	
+	// clSetKernelArg(kernel, 4, sizeof(bool), &data.state._pressed);
+	// clSetKernelArg(kernel, 5, sizeof(bool), &data.state._pressed);
+	// clSetKernelArg(kernel, 6, sizeof(bool), &data.state._pressed);
+
+	glFinish();
+	clEnqueueAcquireGLObjects(data.queue, 1, &(data.cl_vbo_mem), 0, nullptr, nullptr);
+
+	size_t global_work_size = data.particle_number;
+	clEnqueueNDRangeKernel(data.queue, data.kernel, 1, nullptr, &global_work_size, nullptr, 0, nullptr, nullptr);
+
+	clEnqueueReleaseGLObjects(data.queue, 1, &(data.cl_vbo_mem), 0, nullptr, nullptr);
+	clFinish(data.queue);
+
 	glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 	setUniformVal(data);
-	updateParticleSystem(data);
+	//updateParticleSystem(data);
 
-	renderGravityCenter(data);
+	//renderGravityCenter(data);
 
 	data.vao.bind();
 	glDrawArrays(GL_POINTS, 0,  data.particle_number);

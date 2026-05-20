@@ -3,10 +3,8 @@
 IMAGE_NAME="ps-ubuntu"
 CONTAINER_NAME="ps-container"
 
-# 1. Créer l'image si elle n'existe pas
 if [[ "$(podman images -q $IMAGE_NAME 2> /dev/null)" == "" ]]; then
     echo "Construction de l'image de dev..."
-    # On crée un Dockerfile temporaire
     cat <<EOF > Dockerfile.ps
 FROM ubuntu:22.04
 ENV DEBIAN_FRONTEND=noninteractive
@@ -15,13 +13,12 @@ RUN apt-get update && apt-get install -y \
     libgl1-mesa-dev libx11-dev libxrandr-dev \
     libxinerama-dev libxcursor-dev libxi-dev mesa-utils \
     opencl-headers ocl-icd-opencl-dev clinfo \
-    mesa-opencl-icd intel-opencl-icd
+    intel-opencl-icd pocl-opencl-icd
 EOF
     podman build -t $IMAGE_NAME -f Dockerfile.ps
     rm Dockerfile.ps
 fi
 
-# 2. Lancer le conteneur s'il n'existe pas déjà
 if ! podman ps -a --format "{{.Names}}" | grep -q "$CONTAINER_NAME"; then
     echo "Création du conteneur..."
     podman create \
@@ -40,6 +37,5 @@ if ! podman ps -a --format "{{.Names}}" | grep -q "$CONTAINER_NAME"; then
         -it $IMAGE_NAME zsh
     fi
 
-# 3. Démarrer et entrer
 podman start "$CONTAINER_NAME"
 podman exec -it "$CONTAINER_NAME" zsh

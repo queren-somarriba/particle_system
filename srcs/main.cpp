@@ -15,9 +15,11 @@
 #include "utils.hpp"
 #include "renderer.hpp"
 #include "shape.hpp"
+#include "cl.hpp"
 
 void setupGpuData(psData& data, std::vector<float> gpuVector)
 {
+	data.gpuVector.clear();
 	gpuVector.reserve(data.particle_number * 6);
 	
 	for(const Particle& p : data.particles)
@@ -42,21 +44,20 @@ void setupData(psData& data, const char* argv1)
 
 	initCube(data.particles, data.particle_number, data.state.gCenter);
 
-	std::vector<float> gpuVector;
-	gpuVector.reserve(data.particle_number * 6);
+	data.gpuVector.reserve(data.particle_number * 6);
 	for (const Particle& p : data.particles)
 	{
-		gpuVector.push_back(p.pos.x);
-		gpuVector.push_back(p.pos.y);
-		gpuVector.push_back(p.pos.z);
-		gpuVector.push_back(p.color.x);
-		gpuVector.push_back(p.color.y);
-		gpuVector.push_back(p.color.z);
+		data.gpuVector.push_back(p.pos.x);
+		data.gpuVector.push_back(p.pos.y);
+		data.gpuVector.push_back(p.pos.z);
+		data.gpuVector.push_back(p.color.x);
+		data.gpuVector.push_back(p.color.y);
+		data.gpuVector.push_back(p.color.z);
 	}
 
 	data.vao.bind();
-	data.vbo = std::make_unique<VBO>(gpuVector.data(),
-		gpuVector.size() * sizeof(float), GL_DYNAMIC_DRAW);
+	data.vbo = std::make_unique<VBO>(data.gpuVector.data(),
+		data.gpuVector.size() * sizeof(float), GL_DYNAMIC_DRAW);
 	data.vao.linkAttrib(*data.vbo, 0, 3, GL_FLOAT, 6 * sizeof(float), (void*)0);
 	data.vao.linkAttrib(*data.vbo, 1, 3, GL_FLOAT, 6 * sizeof(float), (void*)(3 * sizeof(float)));
 	data.vao.unbind();
@@ -90,6 +91,7 @@ int main(int argc, char** argv)
 
 			while (!glfwWindowShouldClose(window))
 				renderParticles(window, data);
+			cleanupCLobjects(data);
 		}
 
 		glfwDestroyWindow(window);
