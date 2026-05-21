@@ -62,21 +62,6 @@ struct GpuPhysicalParticle
 	int	alive;
 };
 
-struct	Emitter
-{
-	vect4f	pos;
-	vect4f	initVelMin;
-	vect4f	initVelMax;
-	float	rate;
-	float	accumulator;
-	float	minLife;
-	float	maxLife;
-	float	turbulenceStrength;
-	float	turbulenceFreq;
-	unsigned int	burstCount;
-	bool	burstPending;
-};
-
 struct alignas(16) GpuSimulationState
 {
 	vect4f	gCenter = vect4f(0.f, 0.f, 0.f);
@@ -88,12 +73,12 @@ struct alignas(16) GpuSimulationState
 	int		gravity = 1;
 	int		cube = 0;
 	int		sphere = 0;
+	int		emitte = 0;
 };
 
 struct AppState
 {
 	Camera	camera;
-	Emitter	emitter;
 	GpuSimulationState	gpuState;
 	mat4f	invWorld;
 	vect4f	targetCenter;
@@ -103,16 +88,11 @@ struct AppState
 	Shape	shape = CUBE;
 	bool	space_pressed;
 	bool	r_pressed = false;
-	bool	e_pressed = false;
 	bool	l_pressed = false;
 	bool	mouse_in_window = false;
 	
 	AppState() : 
 		camera(vect4f(0.0f, 0.0f, 3.0f)),
-		emitter(
-			{vect4f(0.f, 0.f, 0.f), vect4f(-0.2f, 0.2f, -0.3f),
-			vect4f( 0.2f, 0.8f,  0.3f),	500.f, 0.f, 2.f, 6.f, 0.4f, 1.5f, 200, false}
-		),
 		targetCenter(vect4f(0.f, 0.f, 0.f)),
 		lastFrame(0.0f), space_pressed(false) {}
 };

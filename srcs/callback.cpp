@@ -47,12 +47,12 @@ void processInput(GLFWwindow *window, psData& data)
 	if (glfwGetKey(window, GLFW_KEY_R) == GLFW_RELEASE)
 		data.state.r_pressed = false;
 	/* E */
-	if (glfwGetKey(window, GLFW_KEY_E) == GLFW_PRESS && !data.state.e_pressed)
+	if (glfwGetKey(window, GLFW_KEY_E) == GLFW_PRESS && !data.state.gpuState.emitte)
 	{
-		data.state.e_pressed = true;
+		data.state.gpuState.emitte = true;
 	}
 	if (glfwGetKey(window, GLFW_KEY_E) == GLFW_RELEASE)
-		data.state.e_pressed = false;
+		data.state.gpuState.emitte = false;
 	/* L */
 	if (glfwGetKey(window, GLFW_KEY_L) == GLFW_PRESS && !data.state.l_pressed)
 	{

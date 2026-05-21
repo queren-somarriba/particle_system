@@ -16,6 +16,7 @@ typedef struct
 	int		gravity;
 	int		cube;
 	int		sphere;
+	int		emitte;
 } __attribute__ ((aligned (16))) GpuSimulationState;
 
 typedef struct __attribute__ ((packed))
@@ -93,7 +94,7 @@ inline float3 compute_turbulence(float3 pos, float time, float strength, float f
     return (float3)(ax * strength, ay * strength, az * strength);
 }
 
-float3 computeVel(float3 pos, float3 gCenter, unsigned int seed)
+inline float3 computeVel(float3 pos, float3 gCenter, unsigned int seed)
 {
 	float3 dir = pos - gCenter;
 	float dlen = length(dir);
@@ -117,7 +118,7 @@ float3 computeVel(float3 pos, float3 gCenter, unsigned int seed)
 	return tangent * speed;	
 }
 
-void initCube(__private float3* pos, __private float3* color, __private GpuPhysicalParticle* physics, GpuSimulationState state, int id)
+inline void initCube(__private float3* pos, __private float3* color, __private GpuPhysicalParticle* physics, GpuSimulationState state, int id)
 {
 	unsigned int seed = id;
 	*pos = (float3)(
@@ -135,7 +136,7 @@ void initCube(__private float3* pos, __private float3* color, __private GpuPhysi
 	*color = (float3)(gdist, 0.f, physics->maxLife - physics->life);
 }
 
-void initSphere(__private float3* pos, __private float3* color, __private GpuPhysicalParticle* physics, GpuSimulationState state, int id)
+inline void initSphere(__private float3* pos, __private float3* color, __private GpuPhysicalParticle* physics, GpuSimulationState state, int id)
 {
 	unsigned int seed = id;
 	float u = extract_random(&seed);
@@ -160,6 +161,29 @@ void initSphere(__private float3* pos, __private float3* color, __private GpuPhy
 	physics->life = physics->maxLife;
 	physics->alive = 1;
 	*color = (float3)(gdist, 0.f, physics->maxLife - physics->life);
+}
+
+inline 	void emitOne(__private float3* pos, __private float3* color, __private GpuPhysicalParticle* physics, GpuSimulationState state, int id)
+{
+	float time = state.time;
+	unsigned int seed = id + (unsigned int)(state.time * 1000.0f);
+	*pos  = state.gCenter.xyz;
+	//velmin + randf() * (velmax - velmin)
+	physics->vel.xyz  = (float3)(
+		-0.05f + extract_random(&seed) * (0.05f - -0.05f),
+		0.2f + extract_random(&seed) * (0.8f - 0.2f),
+		-0.3f + extract_random(&seed) * (0.3f - -0.3f)
+	);
+
+	physics->vel.x = cos(time) + physics->vel.x;
+	physics->vel.y = sin(time) + physics->vel.y;
+	if (extract_random(&seed) > 0.5f)
+		physics->vel = -1.f * physics->vel;
+	physics->maxLife = 2.f + extract_random(&seed) * (6.f - 2.f);
+	physics->life = physics->maxLife;
+	physics->mass = 1.f;
+	physics->alive = 1;
+	*color = (float3)(1.f, 0.8f, 0.2f);
 }
 
 /* Kernel */
@@ -193,7 +217,12 @@ __kernel void update_particles(__global float* vbo_data,
 		physics[id] = tmp;
 	}
 
-	if (!physics[id].alive)
+	if (state.emitte && !physics[id].alive)
+	{
+		emitOne(&pos, &color, &tmp, state, id);
+		physics[id] = tmp;
+	}
+	else if (!physics[id].alive)
 	{
 		vbo_data[vbo_index] = 99999.f;
 		return;
@@ -231,7 +260,7 @@ __kernel void update_particles(__global float* vbo_data,
 
 	float t = life / maxLife;
 	float center_dist = 1.0f - gDist / (gDist + 1.0f);
-	center_dist = center_dist * center_dist;
+	center_dist = center_dist * center_dist * center_dist;
 	
 	color.x = t + center_dist;
 	color.y = 0.0f + center_dist;
