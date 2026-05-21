@@ -112,7 +112,7 @@ float3 computeVel(float3 pos, float3 gCenter, unsigned int seed)
 	if (tlen > 1e-5f)
 		tangent = tangent * (1.f / tlen);
 
-	float speed = 0.3f + extract_random(&seed) * 0.4f; // % particle number
+	float speed = 0.3f + extract_random(&seed) * 0.4f;
 
 	return tangent * speed;	
 }
@@ -179,9 +179,6 @@ __kernel void update_particles(__global float* vbo_data,
 	int vbo_index = id * 6;
 	float3 pos = (float3)(vbo_data[vbo_index], vbo_data[vbo_index + 1], vbo_data[vbo_index + 2]);
 	float3 color = (float3)(vbo_data[vbo_index + 3], vbo_data[vbo_index + 5], vbo_data[vbo_index + 5]);
-	float3 vel = physics[id].vel.xyz;
-	float life = physics[id].life;
-	float maxLife = physics[id].maxLife;
 	GpuPhysicalParticle tmp = physics[id];
 
 	if (state.cube == 1)
@@ -201,6 +198,10 @@ __kernel void update_particles(__global float* vbo_data,
 		vbo_data[vbo_index] = 99999.f;
 		return;
 	}
+
+	float3 vel = physics[id].vel.xyz;
+	float life = physics[id].life;
+	float maxLife = physics[id].maxLife;
 
 	if (!state.immortal)
 		life -= state.deltaTime;
