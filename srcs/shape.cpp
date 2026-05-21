@@ -26,15 +26,6 @@ namespace
 		p.vel = tangent * speed;
 	}
 }
-// clEnqueueWriteBuffer(
-//     queue, 
-//     cl_velocities_mem, 
-//     CL_TRUE, // Bloquant (on attend que la copie soit finie)
-//     0,       // Offset
-//     NUM_PARTICLES * 4 * sizeof(float), 
-//     initial_velocities.data(), 
-//     0, nullptr, nullptr
-// );
 
 void initCube(std::vector<Particle>& particles, unsigned int n, const vect4f& gCenter)
 {
@@ -50,9 +41,9 @@ void initCube(std::vector<Particle>& particles, unsigned int n, const vect4f& gC
 		p.mass = 1.f;
 		vect4f gdir = gCenter - p.pos;
 		p.gDist = gdir.length();
-		p.color = vect4f(p.gDist, 0.f, p.maxLife - p.life);
 		p.maxLife = 2.f + randf() * 4.f;
 		p.life = p.maxLife;
+		p.color = vect4f(p.gDist, 0.f, p.maxLife - p.life);
 		p.alive = true;
 		particles[i] = p;
 	}
@@ -78,9 +69,9 @@ void initSphere(std::vector<Particle>& particles, unsigned int n, const vect4f& 
 		p.mass = 1.f;
 		vect4f gdir = gCenter - p.pos;
 		p.gDist = gdir.length();
-		p.color = vect4f(p.gDist, 0.f, p.maxLife - p.life);
 		p.maxLife = 2.f + randf() * 4.f;
 		p.life = p.maxLife;
+		p.color = vect4f(p.gDist, 0.f, p.maxLife - p.life);
 		p.alive = true;
 		particles[i] = p;
 	}
@@ -89,9 +80,9 @@ void initSphere(std::vector<Particle>& particles, unsigned int n, const vect4f& 
 void resetParticles(psData& data)
 {
 	if (data.state.shape == CUBE)
-		initCube(data.particles, data.particle_number, data.state.gCenter);
+		initCube(data.particles, data.particle_number, data.state.gpuState.gCenter);
 	else
-		initSphere(data.particles, data.particle_number, data.state.gCenter);
+		initSphere(data.particles, data.particle_number, data.state.gpuState.gCenter);
 
-	setupGpuData(data, data.gpuVector);
+	//setupGpuData(data, data.gpuVector);
 }

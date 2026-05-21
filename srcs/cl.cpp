@@ -1,61 +1,112 @@
 #include "particle_system.hpp"
 #include "cl.hpp"
+#include <fstream>
+#include <sstream>
 
-void initVelMem(psData& data)
+std::string loadKernelSource(const std::string& filename)
 {
-	std::vector<float>initial_velocities;
-	initial_velocities.reserve(data.particle_number * 4);
-
-	for (Particle& p : data.particles)
+	std::ifstream file(filename);
+	if (!file.is_open())
 	{
-		initial_velocities.push_back(p.vel.x);
-		initial_velocities.push_back(p.vel.y);
-		initial_velocities.push_back(p.vel.z);
-		initial_velocities.push_back(p.vel.w);
+		throw std::runtime_error("Failed to open kernel file : " + filename);
+	}
+	std::stringstream buffer;
+	buffer << file.rdbuf();
+	return buffer.str();
+}
+
+void initPhysicsMem(psData& data)
+{
+	std::vector<GpuPhysicalParticle> gpu_particles;
+	gpu_particles.reserve(data.particle_number);
+
+	for (const Particle& p : data.particles)
+	{
+		GpuPhysicalParticle gp;
+		gp.vel = p.vel;
+		gp.mass = p.mass;
+		gp.life = p.life;
+		gp.maxLife = p.maxLife;
+		gp.alive = p.alive;
+		gpu_particles.push_back(gp);
 	}
 
-	clEnqueueWriteBuffer(data.queue, data.cl_vel_mem, CL_TRUE, 0, data.particle_number * 4 * sizeof(float),
-		initial_velocities.data(), 0, nullptr, nullptr);
+	clEnqueueWriteBuffer(data.queue, data.cl_physics_mem, CL_TRUE, 0, data.particle_number * sizeof(GpuPhysicalParticle),
+		gpu_particles.data(), 0, nullptr, nullptr);
 }
 
 void initOpenCL(psData& data)
 {
 	clGetPlatformIDs(1, &(data.platform), nullptr);
+	clGetDeviceIDs(data.platform, CL_DEVICE_TYPE_GPU, 1, &(data.device), nullptr);
+
+	GLXContext glx_ctx = glXGetCurrentContext();
+	Display* glx_dpy = glXGetCurrentDisplay();
+	if (!glx_ctx || !glx_dpy)
+		throw std::runtime_error("No GLX active context to create OpenCL context!");
+
 	cl_context_properties properties[] = {
-		CL_GL_CONTEXT_KHR, (cl_context_properties)glXGetCurrentContext(),
-		CL_GLX_DISPLAY_KHR, (cl_context_properties)glXGetCurrentDisplay(),
-		CL_CONTEXT_PLATFORM, (cl_context_properties)(data.platform),
+		CL_GL_CONTEXT_KHR,  (cl_context_properties)glx_ctx,
+		CL_GLX_DISPLAY_KHR, (cl_context_properties)glx_dpy,
+		CL_CONTEXT_PLATFORM,(cl_context_properties)(data.platform),
 		0
 	};
 
-	clGetDeviceIDs(data.platform, CL_DEVICE_TYPE_GPU, 1, &(data.device), nullptr);
-	data.context = clCreateContext(properties, 1, &(data.device), nullptr, nullptr, nullptr);
+	cl_int err;
+	data.context = clCreateContext(properties, 1, &(data.device), nullptr, nullptr, &err);
+	if (err != CL_SUCCESS)
+		std::cerr << "Error: clCreateContext. Code: " << err << std::endl;
+
 	data.queue = clCreateCommandQueueWithProperties(data.context, data.device, nullptr, nullptr);
 }
 
 void initInteropAndKernel(psData& data)
 {
-	data.cl_vbo_mem = clCreateFromGLBuffer(data.context, CL_MEM_READ_WRITE, static_cast<cl_GLuint>(data.vbo->id), nullptr);
-
 	cl_int err;
-	data.cl_vel_mem = clCreateBuffer(context, CL_MEM_READ_WRITE,
-		data.particle_number * 4 * sizeof(float), nullptr, &err);
 	
+	glFinish(); 
+
+	data.cl_vbo_mem = clCreateFromGLBuffer(data.context, CL_MEM_READ_WRITE, static_cast<cl_GLuint>(data.vbo->id), &err);
+	if (err != CL_SUCCESS) {
+		std::cerr << "Error: clCreateFromGLBuffer. Code: " << err << std::endl;
+	}
+
+	data.cl_physics_mem = clCreateBuffer(data.context, CL_MEM_READ_WRITE,
+		data.particle_number * sizeof(GpuPhysicalParticle), nullptr, &err);
+
 	if (err != CL_SUCCESS)
-		std::cerr << "Error: clCreateBuffer" << std::endl;
+		std::cerr << "Error: clCreateBuffer. Code: " << err << std::endl;
 
-	const char* kernel_source = "__kernel void simulate...";
-	data.program = clCreateProgramWithSource(data.context, 1, &kernel_source, nullptr, nullptr);
-	clBuildProgram(data.program, 1, &(data.device), nullptr, nullptr, nullptr);
+	std::string source_str = loadKernelSource("./kernels/simulation.cl");
+	size_t source_size = source_str.length();
+	const char* kernel_source = source_str.c_str();
 
-	data.kernel = clCreateKernel(data.program, "update_particles", nullptr);
+	data.program = clCreateProgramWithSource(data.context, 1, &kernel_source, &source_size, &err);
+
+	err = clBuildProgram(data.program, 1, &(data.device), "-cl-std=CL2.0", nullptr, nullptr);
+
+	if (err != CL_SUCCESS)
+	{
+		size_t log_size;
+		clGetProgramBuildInfo(data.program, data.device, CL_PROGRAM_BUILD_LOG, 0, nullptr, &log_size);
+		std::vector<char> build_log(log_size);
+		clGetProgramBuildInfo(data.program, data.device, CL_PROGRAM_BUILD_LOG, log_size, build_log.data(), nullptr);
+		
+		std::cerr << "ERROR::KERNEL::COMPILATION" << std::endl;
+		std::cerr << build_log.data() << std::endl;
+		throw std::runtime_error("Fail to compile OpenCL code");
+	}
+
+	data.emit_kernel = clCreateKernel(data.program, "emit_particles", &err);
+	data.kernel = clCreateKernel(data.program, "update_particles", &err);
 }
 
 void cleanupCLobjects(psData& data)
 {
 	clReleaseMemObject(data.cl_vbo_mem);
-	clReleaseMemObject(data.cl_vel_mem);
+	clReleaseMemObject(data.cl_physics_mem);
 	clReleaseKernel(data.kernel);
+	clReleaseKernel(data.emit_kernel);
 	clReleaseProgram(data.program);
 	clReleaseCommandQueue(data.queue);
 	clReleaseContext(data.context);

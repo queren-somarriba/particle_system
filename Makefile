@@ -1,7 +1,7 @@
 NAME	= particle_system
 CC		= c++
 
-DEBUG	= 1
+DEBUG	= 0
 
 RED		= \033[1;31m
 GREEN	= \033[1;32m
@@ -17,6 +17,8 @@ else
 	LDFLAGS		=
 endif
 
+# ln -s /usr/lib64/libOpenCL.so.1 ./libs/libOpenCL.so 
+
 INCLUDES_DIR		= includes
 CLASS_DIR			= includes/class
 EXTERNAL_LIBS_DIR	= includes/external
@@ -26,7 +28,7 @@ OBJ_DIR				= obj
 SRCS_DIR			= srcs
 CLASS_CPP			= $(SRCS_DIR)/class
 GLFLAGS				= -lglfw -lGL -lX11 -lpthread -ldl -lXrandr -lXinerama -lXcursor -lXi
-CLFLAGS				= -lOpenCL
+CLFLAGS				= -L./libs -lOpenCL
 
 SRCS		= $(SRCS_DIR)/main.cpp \
 			$(SRCS_DIR)/callback.cpp \

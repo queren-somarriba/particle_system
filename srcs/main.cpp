@@ -42,7 +42,7 @@ void setupData(psData& data, const char* argv1)
 	data.particle_number = std::stoi(argv1);
 	data.particles.resize(data.particle_number);
 
-	initCube(data.particles, data.particle_number, data.state.gCenter);
+	initCube(data.particles, data.particle_number, data.state.gpuState.gCenter);
 
 	data.gpuVector.reserve(data.particle_number * 6);
 	for (const Particle& p : data.particles)
@@ -81,13 +81,16 @@ int main(int argc, char** argv)
 		GLFWwindow* window = initWindow();
 		if (!window)
 			return 1;
-
+		
 		{
 			psData data = {};
 			setupData(data, argv[1]);
 
 			glfwSetWindowUserPointer(window, &data);
 			glfwSetCursorPos(window, 0.f, 0.f);
+			initOpenCL(data);
+			initInteropAndKernel(data);
+			initPhysicsMem(data);
 
 			while (!glfwWindowShouldClose(window))
 				renderParticles(window, data);

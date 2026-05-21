@@ -8,17 +8,17 @@ namespace
 	void InputMoveCam(GLFWwindow *window, AppState& state)
 	{
 		if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
-			state.camera.ProcessKeyboard(FORWARD, state.deltaTime);
+			state.camera.ProcessKeyboard(FORWARD, state.gpuState.deltaTime);
 		if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)
-			state.camera.ProcessKeyboard(BACKWARD, state.deltaTime);
+			state.camera.ProcessKeyboard(BACKWARD, state.gpuState.deltaTime);
 		if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS)
-			state.camera.ProcessKeyboard(LEFT, state.deltaTime);
+			state.camera.ProcessKeyboard(LEFT, state.gpuState.deltaTime);
 		if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
-			state.camera.ProcessKeyboard(RIGHT, state.deltaTime);
+			state.camera.ProcessKeyboard(RIGHT, state.gpuState.deltaTime);
 		if (glfwGetKey(window, GLFW_KEY_UP) == GLFW_PRESS)
-			state.camera.ProcessKeyboard(UP, state.deltaTime);
+			state.camera.ProcessKeyboard(UP, state.gpuState.deltaTime);
 		if (glfwGetKey(window, GLFW_KEY_DOWN) == GLFW_PRESS)
-			state.camera.ProcessKeyboard(DOWN, state.deltaTime);
+			state.camera.ProcessKeyboard(DOWN, state.gpuState.deltaTime);
 	}
 }
 
@@ -31,8 +31,9 @@ void processInput(GLFWwindow *window, psData& data)
 	/* Space */
 	if (glfwGetKey(window, GLFW_KEY_SPACE) == GLFW_PRESS && !data.state.space_pressed)
 	{
-		data.state.gravity = !data.state.gravity;
+		data.state.gpuState.gravity = data.state.gpuState.gravity ? 0 : 1;
 		data.state.space_pressed = true;
+		std::cout << "gravity on? : " << data.state.gpuState.gravity << std::endl;
 	}
 	if (glfwGetKey(window, GLFW_KEY_SPACE) == GLFW_RELEASE)
 		data.state.space_pressed = false;
@@ -55,18 +56,18 @@ void processInput(GLFWwindow *window, psData& data)
 	/* L */
 	if (glfwGetKey(window, GLFW_KEY_L) == GLFW_PRESS && !data.state.l_pressed)
 	{
-		data.state.immortal = !data.state.immortal;
+		data.state.gpuState.immortal = !data.state.gpuState.immortal;
 		data.state.l_pressed = true;
 	}
 	if (glfwGetKey(window, GLFW_KEY_L) == GLFW_RELEASE)
 		data.state.l_pressed = false;
 	/* T */
-	if (glfwGetKey(window, GLFW_KEY_T) == GLFW_PRESS && !data.state.t_pressed)
+	if (glfwGetKey(window, GLFW_KEY_T) == GLFW_PRESS && !data.state.gpuState.turbulence)
 	{
-		data.state.t_pressed = true;
+		data.state.gpuState.turbulence = true;
 	}
 	if (glfwGetKey(window, GLFW_KEY_T) == GLFW_RELEASE)
-		data.state.t_pressed = false;
+		data.state.gpuState.turbulence = false;
 }
 
 void framebuffer_size_callback(GLFWwindow* window, int width, int height)
@@ -79,9 +80,9 @@ void scroll_callback(GLFWwindow* window, double xoffset, double yoffset)
 {
 	(void)xoffset;
 	psData* data = reinterpret_cast<psData*>(glfwGetWindowUserPointer(window));
-	if (data && (data->state.G >= 1.f || (data->state.G >= 0.f && yoffset > 0.f)) &&
-			(data->state.G <= 19.f || (data->state.G <= 20.f && yoffset < 0.f)))
-		data->state.G += static_cast<float>(yoffset);
+	if (data && (data->state.gpuState.G >= 1.f || (data->state.gpuState.G >= 0.f && yoffset > 0.f)) &&
+			(data->state.gpuState.G <= 19.f || (data->state.gpuState.G <= 20.f && yoffset < 0.f)))
+		data->state.gpuState.G += static_cast<float>(yoffset);
 }
 
 void cursor_enter_callback(GLFWwindow* window, int entered)
@@ -120,7 +121,7 @@ void cursor_position_callback(GLFWwindow* window, double xpos, double ypos)
 	{
 		worldPos.x /= worldPos.w;
 		worldPos.y /= worldPos.w;
-		worldPos.z = data->state.gCenter.z;
+		worldPos.z = data->state.gpuState.gCenter.z;
 	}
 	data->state.targetCenter = worldPos;
 }
