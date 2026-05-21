@@ -86,6 +86,8 @@ struct alignas(16) GpuSimulationState
 	int		immortal = 1;
 	int		turbulence = 0;
 	int		gravity = 1;
+	int		cube = 0;
+	int		sphere = 0;
 };
 
 struct AppState

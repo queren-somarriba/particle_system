@@ -33,7 +33,6 @@ void processInput(GLFWwindow *window, psData& data)
 	{
 		data.state.gpuState.gravity = data.state.gpuState.gravity ? 0 : 1;
 		data.state.space_pressed = true;
-		std::cout << "gravity on? : " << data.state.gpuState.gravity << std::endl;
 	}
 	if (glfwGetKey(window, GLFW_KEY_SPACE) == GLFW_RELEASE)
 		data.state.space_pressed = false;
@@ -41,7 +40,8 @@ void processInput(GLFWwindow *window, psData& data)
 	if (glfwGetKey(window, GLFW_KEY_R) == GLFW_PRESS && !data.state.r_pressed)
 	{
 		data.state.shape = (data.state.shape == CUBE) ? SPHERE : CUBE;
-		resetParticles(data);
+		data.state.gpuState.cube = data.state.shape == CUBE ? 1 : 0;
+		data.state.gpuState.sphere = data.state.shape == SPHERE ? 1 : 0;
 		data.state.r_pressed = true;
 	}
 	if (glfwGetKey(window, GLFW_KEY_R) == GLFW_RELEASE)

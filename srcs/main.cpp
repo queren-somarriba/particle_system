@@ -17,25 +17,25 @@
 #include "shape.hpp"
 #include "cl.hpp"
 
-void setupGpuData(psData& data, std::vector<float> gpuVector)
-{
-	data.gpuVector.clear();
-	gpuVector.reserve(data.particle_number * 6);
+// void setupGpuData(psData& data, std::vector<float> gpuVector)
+// {
+// 	data.gpuVector.clear();
+// 	gpuVector.reserve(data.particle_number * 6);
 	
-	for(const Particle& p : data.particles)
-	{
-		gpuVector.push_back(p.pos.x);
-		gpuVector.push_back(p.pos.y);
-		gpuVector.push_back(p.pos.z);
-		gpuVector.push_back(p.color.x);
-		gpuVector.push_back(p.color.y);
-		gpuVector.push_back(p.color.z);
-	}
+// 	for(const Particle& p : data.particles)
+// 	{
+// 		gpuVector.push_back(p.pos.x);
+// 		gpuVector.push_back(p.pos.y);
+// 		gpuVector.push_back(p.pos.z);
+// 		gpuVector.push_back(p.color.x);
+// 		gpuVector.push_back(p.color.y);
+// 		gpuVector.push_back(p.color.z);
+// 	}
 
-	data.vbo->bind();
-	glBufferSubData(GL_ARRAY_BUFFER, 0, gpuVector.size() * sizeof(float), gpuVector.data());
-	data.vbo->unbind();
-}
+// 	data.vbo->bind();
+// 	glBufferSubData(GL_ARRAY_BUFFER, 0, gpuVector.size() * sizeof(float), gpuVector.data());
+// 	data.vbo->unbind();
+// }
 
 void setupData(psData& data, const char* argv1)
 {

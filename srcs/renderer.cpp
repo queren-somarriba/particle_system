@@ -198,6 +198,11 @@ void renderParticles(GLFWwindow* window, psData& data)
 	glDrawArrays(GL_POINTS, 0,  data.particle_number);
 	data.vao.unbind();
 
+	if (data.state.gpuState.cube)
+		data.state.gpuState.cube = 0;
+	if (data.state.gpuState.sphere)
+		data.state.gpuState.sphere = 0;
+
 	glfwSwapBuffers(window);
 	glfwPollEvents();
 }
