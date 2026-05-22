@@ -185,6 +185,47 @@ inline 	void emitOne(__private float3* pos, __private float3* color, __private G
 	*color = (float3)(1.f, 0.8f, 0.2f);
 }
 
+inline classicPhysicUpdate(__private float3* pos, __private float3* color, __private GpuPhysicalParticle* physics, GpuSimulationState state)
+{
+	const float G = (state.gravity != 0 ? state.G : 0.f);
+	const float softening = 0.5f;
+	const float dampling = 0.995f;
+	const float turbulenceStrength = 0.4f;
+	const float turbulenceFreq = 1.5f;
+	float3 vel = physics->vel.xyz;
+	float life = physics->life;
+	float maxLife = physics->maxLife;
+
+	float3 dir = state.gCenter.xyz - *pos;
+	float gDist = length(dir);
+	if (gDist > 1e-5f)
+	{
+		float magnitude = G / (gDist * gDist + softening * softening);
+		vel += (dir / gDist) * magnitude * state.deltaTime;
+	}
+
+	if (state.turbulence == 1)
+	{
+		float3 turb = compute_turbulence(*pos, state.time, turbulenceStrength, turbulenceFreq);
+		vel += turb * state.deltaTime;
+	}
+
+	*pos += vel * state.deltaTime;
+	vel *= dampling;
+
+	float t = life / maxLife;
+	float center_dist = 1.0f - gDist / (gDist + 1.0f);
+	center_dist = center_dist * center_dist * center_dist;
+	
+	color->x = t + center_dist;
+	color->y = 0.0f + center_dist;
+	color->z = (1.0f - t) + center_dist;
+	
+	physics->vel.xyz = vel;
+	physics->life = life;
+
+}
+
 /* Kernel */
 
 __kernel void update_particles(__global float* vbo_data, 
@@ -194,11 +235,6 @@ __kernel void update_particles(__global float* vbo_data,
 {
 	int id = get_global_id(0);
 
-	const float G = (state.gravity != 0 ? state.G : 0.f);
-	const float softening = 0.5f;
-	const float dampling = 0.995f;
-	const float turbulenceStrength = 0.4f;
-	const float turbulenceFreq = 1.5f;
 	int vbo_index = id * 6;
 	float3 pos = (float3)(vbo_data[vbo_index], vbo_data[vbo_index + 1], vbo_data[vbo_index + 2]);
 	float3 color = (float3)(vbo_data[vbo_index + 3], vbo_data[vbo_index + 5], vbo_data[vbo_index + 5]);
@@ -227,43 +263,19 @@ __kernel void update_particles(__global float* vbo_data,
 		return;
 	}
 
-	float3 vel = physics[id].vel.xyz;
-	float life = physics[id].life;
-	float maxLife = physics[id].maxLife;
-
 	if (!state.immortal)
-		life -= state.deltaTime;
-	if (life <= 0.f)
+		physics[id].life -= state.deltaTime;
+	if (physics[id].life <= 0.f)
 	{
 		physics[id].alive = 0;
 		vbo_data[vbo_index] = 99999.f;
 		return;
 	}
 
-	float3 dir = state.gCenter.xyz - pos;
-	float gDist = length(dir);
-	if (gDist > 1e-5f)
-	{
-		float magnitude = G / (gDist * gDist + softening * softening);
-		vel += (dir / gDist) * magnitude * state.deltaTime;
-	}
-
-	if (state.turbulence == 1)
-	{
-		float3 turb = compute_turbulence(pos, state.time, turbulenceStrength, turbulenceFreq);
-		vel += turb * state.deltaTime;
-	}
-
-	pos += vel * state.deltaTime;
-	vel *= dampling;
-
-	float t = life / maxLife;
-	float center_dist = 1.0f - gDist / (gDist + 1.0f);
-	center_dist = center_dist * center_dist * center_dist;
-	
-	color.x = t + center_dist;
-	color.y = 0.0f + center_dist;
-	color.z = (1.0f - t) + center_dist;
+	tmp = physics[id];
+	if (state.)
+	classicPhysicUpdate(&pos, &color, &tmp, state);
+	physics[id] = tmp;
 
 	vbo_data[vbo_index + 0] = pos.x;
 	vbo_data[vbo_index + 1] = pos.y;
@@ -271,7 +283,4 @@ __kernel void update_particles(__global float* vbo_data,
 	vbo_data[vbo_index + 3] = color.x;
 	vbo_data[vbo_index + 4] = color.y;
 	vbo_data[vbo_index + 5] = color.z;
-
-	physics[id].vel.xyz = vel;
-	physics[id].life = life;
 }
