@@ -12,23 +12,23 @@
 #include "Random.hpp"
 #include "VAO.hpp"
 #include "VBO.hpp"
-#include "utils.hpp"
 #include "renderer.hpp"
 #include "cl.hpp"
 
-void setupData(psData& data, const char* argv1)
+namespace
 {
-	data.particle_number = std::stoi(argv1);
+	void setupGLObjects(psData& data)
+	{
+		data.vao.bind();
+		data.vbo = std::make_unique<VBO>(nullptr,
+			data.particle_number * 6 * sizeof(float), GL_DYNAMIC_DRAW);
+		data.vao.linkAttrib(*data.vbo, 0, 3, GL_FLOAT, 6 * sizeof(float), (void*)0);
+		data.vao.linkAttrib(*data.vbo, 1, 3, GL_FLOAT, 6 * sizeof(float), (void*)(3 * sizeof(float)));
+		data.vao.unbind();
+		data.vbo->unbind();
 
-	data.vao.bind();
-	data.vbo = std::make_unique<VBO>(nullptr,
-		data.particle_number * 6 * sizeof(float), GL_DYNAMIC_DRAW);
-	data.vao.linkAttrib(*data.vbo, 0, 3, GL_FLOAT, 6 * sizeof(float), (void*)0);
-	data.vao.linkAttrib(*data.vbo, 1, 3, GL_FLOAT, 6 * sizeof(float), (void*)(3 * sizeof(float)));
-	data.vao.unbind();
-	data.vbo->unbind();
-
-	data.shader = std::make_unique<Shader>("./shaders/Particle.vs", "./shaders/Particle.fs");
+		data.shader = std::make_unique<Shader>("./shaders/Particle.vs", "./shaders/Particle.fs");
+	}
 }
 
 int main(int argc, char** argv)
@@ -49,17 +49,22 @@ int main(int argc, char** argv)
 		
 		{
 			psData data = {};
-			setupData(data, argv[1]);
+			data.particle_number = std::stoi(argv[1]);
+			if (data.particle_number <= 10000000 && data.particle_number > 0)
+			{
+				setupGLObjects(data);
 
-			glfwSetWindowUserPointer(window, &data);
-			glfwSetCursorPos(window, 0.f, 0.f);
-			initOpenCL(data);
-			initInteropAndKernel(data);
-			initPhysicsMem(data);
+				glfwSetWindowUserPointer(window, &data);
+				glfwSetCursorPos(window, 0.f, 0.f);
+				initOpenCL(data);
+				initInteropAndKernel(data);
 
-			while (!glfwWindowShouldClose(window))
-				renderParticles(window, data);
-			cleanupCLobjects(data);
+				while (!glfwWindowShouldClose(window))
+					renderParticles(window, data);
+				cleanupCLobjects(data);
+			}
+			else
+				std::cout << "Try with something between 1 and 10 000 000 particles!" << std::endl;
 		}
 
 		glfwDestroyWindow(window);

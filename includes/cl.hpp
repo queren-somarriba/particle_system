@@ -10,5 +10,3 @@ void initOpenCL(psData& data);
 void initInteropAndKernel(psData& data);
 
 void cleanupCLobjects(psData& data);
-
-void initPhysicsMem(psData& data);

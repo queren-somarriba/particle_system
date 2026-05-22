@@ -24,9 +24,7 @@
 
 const int	WIDTH = 800;
 const int	HEIGHT = 800;
-const float	G = 2.f;
 const float	POINT_SIZE = 2.0f;
-const float	TRAIL_ALPHA = 0.04f;
 
 /* STRUCT */
 
@@ -111,7 +109,6 @@ struct psData
 	cl_command_queue		queue;
 	cl_program				program;
 	cl_kernel				kernel;
-	cl_kernel				emit_kernel;
 	cl_mem					cl_vbo_mem;
 	cl_mem					cl_physics_mem;
 };

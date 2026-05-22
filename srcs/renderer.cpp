@@ -5,7 +5,6 @@
 #include <sstream>
 #include "particle_system.hpp"
 #include "callback.hpp"
-#include "utils.hpp"
 #include "cl.hpp"
 
 GLFWwindow* initWindow()

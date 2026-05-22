@@ -166,7 +166,7 @@ inline void initSphere(__private float3* pos, __private float3* color, __private
 inline 	void emitOne(__private float3* pos, __private float3* color, __private GpuPhysicalParticle* physics, GpuSimulationState state, int id)
 {
 	float time = state.time;
-	unsigned int seed = id + (unsigned int)(state.time * 1000.0f);
+	unsigned int seed = id + (unsigned int)(time * 1000.0f);
 	*pos  = state.gCenter.xyz;
 	//velmin + randf() * (velmax - velmin)
 	physics->vel.xyz  = (float3)(
@@ -177,8 +177,7 @@ inline 	void emitOne(__private float3* pos, __private float3* color, __private G
 
 	physics->vel.x = cos(time) + physics->vel.x;
 	physics->vel.y = sin(time) + physics->vel.y;
-	if (extract_random(&seed) > 0.5f)
-		physics->vel = -1.f * physics->vel;
+
 	physics->maxLife = 2.f + extract_random(&seed) * (6.f - 2.f);
 	physics->life = physics->maxLife;
 	physics->mass = 1.f;

@@ -3,36 +3,17 @@
 #include <fstream>
 #include <sstream>
 
-std::string loadKernelSource(const std::string& filename)
+namespace
 {
-	std::ifstream file(filename);
-	if (!file.is_open())
+	std::string loadKernelSource(const std::string& filename)
 	{
-		throw std::runtime_error("Failed to open kernel file : " + filename);
+		std::ifstream file(filename);
+		if (!file.is_open())
+			throw std::runtime_error("Failed to open kernel file : " + filename);
+		std::stringstream buffer;
+		buffer << file.rdbuf();
+		return buffer.str();
 	}
-	std::stringstream buffer;
-	buffer << file.rdbuf();
-	return buffer.str();
-}
-
-void initPhysicsMem(psData& data)
-{
-	// std::vector<GpuPhysicalParticle> gpu_particles;
-	// gpu_particles.reserve(data.particle_number);
-
-	// for (unsigned int i = 0; i < data.particle_number; ++i)
-	// {
-	// 	GpuPhysicalParticle gp = {};
-	// 	// gp.vel = p.vel;
-	// 	// gp.mass = p.mass;
-	// 	// gp.life = p.life;
-	// 	// gp.maxLife = p.maxLife;
-	// 	// gp.alive = p.alive;
-	// 	gpu_particles.push_back(gp);
-	// }
-
-	clEnqueueWriteBuffer(data.queue, data.cl_physics_mem, CL_TRUE, 0, data.particle_number * sizeof(GpuPhysicalParticle),
-		nullptr, 0, nullptr, nullptr);
 }
 
 void initOpenCL(psData& data)
@@ -58,6 +39,8 @@ void initOpenCL(psData& data)
 		std::cerr << "Error: clCreateContext. Code: " << err << std::endl;
 
 	data.queue = clCreateCommandQueueWithProperties(data.context, data.device, nullptr, nullptr);
+	clEnqueueWriteBuffer(data.queue, data.cl_physics_mem, CL_TRUE, 0, data.particle_number * sizeof(GpuPhysicalParticle),
+		nullptr, 0, nullptr, nullptr);
 }
 
 void initInteropAndKernel(psData& data)
@@ -97,7 +80,6 @@ void initInteropAndKernel(psData& data)
 		throw std::runtime_error("Fail to compile OpenCL code");
 	}
 
-	data.emit_kernel = clCreateKernel(data.program, "emit_particles", &err);
 	data.kernel = clCreateKernel(data.program, "update_particles", &err);
 }
 
@@ -106,7 +88,6 @@ void cleanupCLobjects(psData& data)
 	clReleaseMemObject(data.cl_vbo_mem);
 	clReleaseMemObject(data.cl_physics_mem);
 	clReleaseKernel(data.kernel);
-	clReleaseKernel(data.emit_kernel);
 	clReleaseProgram(data.program);
 	clReleaseCommandQueue(data.queue);
 	clReleaseContext(data.context);
