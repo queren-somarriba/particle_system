@@ -35,21 +35,17 @@ void processInput(GLFWwindow *window, psData& data)
 	}
 	if (glfwGetKey(window, GLFW_KEY_SPACE) == GLFW_RELEASE)
 		data.state.space_pressed = false;
-	/* R */
-	if (glfwGetKey(window, GLFW_KEY_R) == GLFW_PRESS && !data.state.r_pressed)
+	/* C */
+	if (glfwGetKey(window, GLFW_KEY_C) == GLFW_PRESS && !data.state.c_pressed)
 	{
-		data.state.shape = (data.state.shape == CUBE) ? SPHERE : CUBE;
-		data.state.gpuState.cube = data.state.shape == CUBE ? 1 : 0;
-		data.state.gpuState.sphere = data.state.shape == SPHERE ? 1 : 0;
-		data.state.r_pressed = true;
+		data.state.gpuState.speedColor = !data.state.gpuState.speedColor;
+		data.state.c_pressed = true;
 	}
-	if (glfwGetKey(window, GLFW_KEY_R) == GLFW_RELEASE)
-		data.state.r_pressed = false;
+	if (glfwGetKey(window, GLFW_KEY_C) == GLFW_RELEASE)
+		data.state.c_pressed = false;
 	/* E */
 	if (glfwGetKey(window, GLFW_KEY_E) == GLFW_PRESS && !data.state.gpuState.emitte)
-	{
 		data.state.gpuState.emitte = true;
-	}
 	if (glfwGetKey(window, GLFW_KEY_E) == GLFW_RELEASE)
 		data.state.gpuState.emitte = false;
 	/* L */
@@ -60,11 +56,19 @@ void processInput(GLFWwindow *window, psData& data)
 	}
 	if (glfwGetKey(window, GLFW_KEY_L) == GLFW_RELEASE)
 		data.state.l_pressed = false;
+	/* R */
+	if (glfwGetKey(window, GLFW_KEY_R) == GLFW_PRESS && !data.state.r_pressed)
+	{
+		data.state.shape = (data.state.shape == CUBE) ? SPHERE : CUBE;
+		data.state.gpuState.cube = data.state.shape == CUBE ? 1 : 0;
+		data.state.gpuState.sphere = data.state.shape == SPHERE ? 1 : 0;
+		data.state.r_pressed = true;
+	}
+	if (glfwGetKey(window, GLFW_KEY_R) == GLFW_RELEASE)
+		data.state.r_pressed = false;
 	/* T */
 	if (glfwGetKey(window, GLFW_KEY_T) == GLFW_PRESS && !data.state.gpuState.turbulence)
-	{
 		data.state.gpuState.turbulence = true;
-	}
 	if (glfwGetKey(window, GLFW_KEY_T) == GLFW_RELEASE)
 		data.state.gpuState.turbulence = false;
 }

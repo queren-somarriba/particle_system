@@ -72,6 +72,7 @@ struct alignas(16) GpuSimulationState
 	int		cube = 1;
 	int		sphere = 0;
 	int		emitte = 0;
+	int		speedColor = 0;
 };
 
 struct AppState
@@ -87,6 +88,7 @@ struct AppState
 	bool	space_pressed;
 	bool	r_pressed = false;
 	bool	l_pressed = false;
+	bool	c_pressed = false;
 	bool	mouse_in_window = false;
 	
 	AppState() : 

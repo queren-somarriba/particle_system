@@ -3,7 +3,7 @@
 #endif
 
 
-/* Structures */
+/*********** STRUCTURES ***********/
 
 typedef struct
 {
@@ -17,6 +17,7 @@ typedef struct
 	int		cube;
 	int		sphere;
 	int		emitte;
+	int		speedColor;
 } __attribute__ ((aligned (16))) GpuSimulationState;
 
 typedef struct __attribute__ ((packed))
@@ -25,11 +26,14 @@ typedef struct __attribute__ ((packed))
 	float	mass;
 	float	life;
 	float	maxLife;
-	int	alive;
+	int		alive;
 } GpuPhysicalParticle;
 
 
-/* Functions */
+/*********** FUNCTIONS ***********/
+
+// Utils
+
 inline float extract_random(__private unsigned int* seed)
 {
 	*seed += 0xe2211c97;
@@ -39,7 +43,6 @@ inline float extract_random(__private unsigned int* seed)
 	x ^= x >> 15;
 	x *= 0x846ca68b;
 	x ^= x >> 16;
-	// Renvoie un float entre 0.0 et 1.0
 	return (float)x / 4294967295.f; 
 }
 
@@ -49,6 +52,8 @@ inline float hash(unsigned int n)
 	n = n * (n * n * 15731u + 789221u) + 1376312589u;
 	return 1.f - (float)(n & 0x7fffffffu) / 1073741824.f;
 }
+
+// Turbulence
 
 inline float valueNoise3D(float x, float y, float z)
 {
@@ -93,6 +98,8 @@ inline float3 compute_turbulence(float3 pos, float time, float strength, float f
     float az = valueNoise3D(pos.x * freq + 91.7f, pos.z * freq + 33.2f, time * freq + 11.3f);
     return (float3)(ax * strength, ay * strength, az * strength);
 }
+
+// Init Shapes
 
 inline float3 computeVel(float3 pos, float3 gCenter, unsigned int seed)
 {
@@ -163,6 +170,8 @@ inline void initSphere(__private float3* pos, __private float3* color, __private
 	*color = (float3)(gdist, 0.f, physics->maxLife - physics->life);
 }
 
+// Emitter
+
 inline 	void emitOne(__private float3* pos, __private float3* color, __private GpuPhysicalParticle* physics, GpuSimulationState state, int id)
 {
 	float time = state.time;
@@ -185,7 +194,9 @@ inline 	void emitOne(__private float3* pos, __private float3* color, __private G
 	*color = (float3)(1.f, 0.8f, 0.2f);
 }
 
-inline classicPhysicUpdate(__private float3* pos, __private float3* color, __private GpuPhysicalParticle* physics, GpuSimulationState state)
+// Physic
+
+inline void PhysicUpdate(__private float3* pos, __private float3* color, __private GpuPhysicalParticle* physics, GpuSimulationState state)
 {
 	const float G = (state.gravity != 0 ? state.G : 0.f);
 	const float softening = 0.5f;
@@ -223,15 +234,28 @@ inline classicPhysicUpdate(__private float3* pos, __private float3* color, __pri
 	
 	physics->vel.xyz = vel;
 	physics->life = life;
-
 }
 
-/* Kernel */
+inline void computeSpeedColor(__private float3* color, float3 vel)
+{
+	float speed = length(vel);
+
+	const float V_MAX = 10.0f;
+	float t = clamp(speed / V_MAX, 0.0f, 1.0f);
+
+	float3 color_slow = (float3)(0.5f, 0.0f, 1.0f); // Violet
+	float3 color_fast = (float3)(1.0f, 0.5f, 0.0f); // Orange
+
+	t = native_sqrt(t);
+	*color = mix(color_slow, color_fast, t);
+}
+
+/*********** KERNEL ***********/
 
 __kernel void update_particles(__global float* vbo_data, 
 								__global GpuPhysicalParticle* physics,
-								const GpuSimulationState state
-                               ) 
+								GpuSimulationState state
+                               )
 {
 	int id = get_global_id(0);
 
@@ -273,9 +297,11 @@ __kernel void update_particles(__global float* vbo_data,
 	}
 
 	tmp = physics[id];
-	if (state.)
-	classicPhysicUpdate(&pos, &color, &tmp, state);
+	PhysicUpdate(&pos, &color, &tmp, state);
 	physics[id] = tmp;
+
+	if (state.speedColor)
+		computeSpeedColor(&color, physics[id].vel.xyz);
 
 	vbo_data[vbo_index + 0] = pos.x;
 	vbo_data[vbo_index + 1] = pos.y;
