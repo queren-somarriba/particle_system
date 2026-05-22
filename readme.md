@@ -1,4 +1,4 @@
-"""# 🎆 Particle System (OpenGL / OpenCL Interoperability)
+# 🎆 Particle System (OpenGL / OpenCL Interoperability)
 
 100% GPU-bound 3D particle system simulation built from scratch in C++. This project demonstrates graphics pipeline concepts and GPGPU computing by using **OpenGL** for rendering and **OpenCL** for physics computation, sharing memory buffers directly in VRAM to eliminate CPU-GPU bottlenecking.
 
@@ -56,4 +56,4 @@ The primary engineering goal of this project is the mitigation of the PCIe bus t
 - **X11 / GLX** (for Linux contexts)
 
 ### Compilation
-Build the system using the provided Makefile:"""
+Build the system using the provided Makefile:
