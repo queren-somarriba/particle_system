@@ -1,4 +1,4 @@
-# 🎆 Particle System (OpenGL / OpenCL Interoperability)
+# Particle System (OpenGL / OpenCL Interoperability)
 
 100% GPU-bound 3D particle system simulation built from scratch in C++. This project demonstrates graphics pipeline concepts and GPGPU computing by using **OpenGL** for rendering and **OpenCL** for physics computation, sharing memory buffers directly in VRAM to eliminate CPU-GPU bottlenecking.
 
@@ -29,9 +29,9 @@ When you launch the application, the following controls are available to interac
 * `E` (Hold) : Trigger continuous real-time particle emission
 
 ### 🎨 Rendering & Geometry
-* `C` : Cycle between Color Modes (`Distance-based` ➔ `Lifetime-based` ➔ `Velocity Ramping`)
-* `L` : Toggle Particle Lifespan `[Active / Immortal Mode]`
-* `R` : Reset and cycle initial geometries `[Cube Grid ➔ Sphere Cloud]`
+* `C` : Cycle between Color Modes (`Distance-based` / `Lifetime-based` ➔ `Velocity Ramping`)
+* `L` : Toggle Particle Lifespan 
+* `R` : Reset and cycle initial geometries `[Cube ➔ Sphere]`
 * `ESC` : Safely free GPU resources and close the application
 
 ---
@@ -56,4 +56,19 @@ The primary engineering goal of this project is the mitigation of the PCIe bus t
 - **X11 / GLX** (for Linux contexts)
 
 ### Compilation
-Build the system using the provided Makefile:
+
+A Makefile is provided at the root of the project. Simply use the standard command:
+```Bash
+make
+```
+### ⚙️ Usage
+```Bash
+./particle_system <particle_number>
+```
+## 📊 Performance Benchmarks
+Thanks to the hardware synchronization and elimination of redundant data copies between RAM and VRAM, the engine handles massive particle arrays fluidly:
+
+- **60 FPS** smoothly maintained at **1,000,000 particles**.
+- **30 FPS** sustained at **3,000,000 particles**.
+
+*(Benchmarks measured on standard 42Paris workstation GPUs).*
