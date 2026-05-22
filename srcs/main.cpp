@@ -5,18 +5,69 @@
 #include <vector>
 #include "camera.hpp"
 #include <ctime>
+#include <cstring>
 #include "particle_system.hpp"
 #include "callback.hpp"
 #include "mat4f.hpp"
 #include "shader.hpp"
-#include "Random.hpp"
 #include "VAO.hpp"
 #include "VBO.hpp"
 #include "renderer.hpp"
 #include "cl.hpp"
+#include <sstream>
 
 namespace
 {
+
+bool checkArgv(const char* argv)
+	{
+		if (!argv || argv[0] == '\0')
+			return false;
+
+		char* endPtr = nullptr;
+		long value = std::strtol(argv, &endPtr, 10);
+
+		if (endPtr == argv || *endPtr != '\0')
+			return false;
+
+		if (value <= 0 || value > 10000000)
+			return false;
+
+		return true;
+	}
+
+	void displayControls()
+	{
+		const std::string RESET = "\033[0m";
+		const std::string BOLD  = "\033[1m";
+		const std::string CYAN  = "\033[36m";
+		const std::string GOLD  = "\033[33m";
+
+		std::cout << GOLD << BOLD << "             🎆  PARTICLE SYSTEM  🎆" << RESET << "\n";
+		std::cout << "--------------------------------------------------\n\n";
+
+		std::cout << CYAN << BOLD << "[ CAMERA & NAVIGATION ]" << RESET << "\n";
+		std::cout << "  • W / A / S / D     : Move camera (Horizontal plane)\n";
+		std::cout << "  • Up / Down         : Move camera (Vertical axis)\n";
+
+		std::cout << CYAN << BOLD << "[ SIMULATION CONTROLS ]" << RESET << "\n";
+		std::cout << "  • Mouse Movement    : Gravity center follows the cursor\n\n";
+		std::cout << "  • Spacebar          : Toggle Gravity Center (On/Off)\n";
+		std::cout << "  • Mouse Scroll      : Adjust Gravity Strength (+/-)\n";
+		std::cout << "  • T (Hold)          : Inject Turbulence\n";
+		std::cout << "  • E (Hold)          : Emit Continuous Particles\n\n";
+
+		std::cout << CYAN << BOLD << "[ RENDU & MODES ]" << RESET << "\n";
+		std::cout << "  • C                 : Color Modes\n";
+		std::cout << "                        (Distance / Lifetime -> Velocity)\n";
+		std::cout << "  • L                 : Toggle Particle Lifespan\n";
+		std::cout << "  • R                 : Reset Shapes (Cube -> Sphere)\n\n";
+
+		std::cout << "--------------------------------------------------\n";
+		std::cout << "  • ESC               : Quit Application\n";
+		std::cout << "--------------------------------------------------" << std::endl;
+	}
+
 	void setupGLObjects(psData& data)
 	{
 		data.vao.bind();
@@ -33,7 +84,7 @@ namespace
 
 int main(int argc, char** argv)
 {
-	if (argc != 2)
+	if (argc != 2 || !checkArgv(argv[1]))
 	{
 		std::cerr << "Usage: ./particle_system <particle_number>" << std::endl;
 		return 1;
@@ -41,38 +92,36 @@ int main(int argc, char** argv)
 
 	try
 	{
-		std::srand((unsigned int)std::time(nullptr));
-
 		GLFWwindow* window = initWindow();
 		if (!window)
 			return 1;
+	
+		psData data = {};
+		data.particle_number = std::stol(argv[1]);
 		
+		displayControls();
+		if (data.particle_number <= 10000000 && data.particle_number > 0)
 		{
-			psData data = {};
-			data.particle_number = std::stoi(argv[1]);
-			if (data.particle_number <= 10000000 && data.particle_number > 0)
-			{
-				setupGLObjects(data);
+			setupGLObjects(data);
 
-				glfwSetWindowUserPointer(window, &data);
-				glfwSetCursorPos(window, 0.f, 0.f);
-				initOpenCL(data);
-				initInteropAndKernel(data);
+			glfwSetWindowUserPointer(window, &data);
+			glfwSetCursorPos(window, 0.f, 0.f);
+			initOpenCL(data);
+			initInteropAndKernel(data);
 
-				while (!glfwWindowShouldClose(window))
-					renderParticles(window, data);
-				cleanupCLobjects(data);
-			}
-			else
-				std::cout << "Try with something between 1 and 10 000 000 particles!" << std::endl;
+			while (!glfwWindowShouldClose(window))
+				renderParticles(window, data);
+			cleanupCLobjects(data);
 		}
+		else
+			std::cout << "Try with something between 1 and 10 000 000 particles!" << std::endl;
 
 		glfwDestroyWindow(window);
 		glfwTerminate();
 	}
 	catch(const std::exception& e)
 	{
-		std::cerr << e.what() << '\n';
+		std::cerr << "Exception: " << e.what() << '\n';
 	}
 	
 	return 0;

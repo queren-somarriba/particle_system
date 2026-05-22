@@ -17,8 +17,6 @@ else
 	LDFLAGS		=
 endif
 
-# ln -s /usr/lib64/libOpenCL.so.1 ./libs/libOpenCL.so 
-
 INCLUDES_DIR		= includes
 CLASS_DIR			= includes/class
 EXTERNAL_LIBS_DIR	= includes/external
@@ -38,7 +36,6 @@ SRCS		= $(SRCS_DIR)/main.cpp \
 			$(CLASS_CPP)/EBO.cpp \
 			$(CLASS_CPP)/VAO.cpp \
 			$(CLASS_CPP)/shader.cpp \
-			$(CLASS_CPP)/texture.cpp \
 			$(CLASS_CPP)/camera.cpp \
 			$(SRCS_DIR)/cl.cpp
 
@@ -52,6 +49,7 @@ $(OBJ_DIR)/%.o: $(SRCS_DIR)/%.cpp
 	$(CC) $(CXXFLAGS) $(INCLUDES) -c $< -o $@
 
 $(NAME): $(OBJS)
+#	ln -s /usr/lib64/libOpenCL.so.1 ./libs/libOpenCL.so 
 	@echo "$(BLUE)Linking $(NAME)...$(RESET)"
 	@$(CC) $(CXXFLAGS) $(OBJS) -o $(NAME) $(LDFLAGS) $(GLFLAGS) $(CLFLAGS)
 	@echo "$(GREEN)Done! Binary $(NAME) is ready.$(RESET)"
