@@ -71,7 +71,7 @@ struct alignas(16) GpuSimulationState
 	int		immortal = 1;
 	int		turbulence = 0;
 	int		gravity = 1;
-	int		cube = 0;
+	int		cube = 1;
 	int		sphere = 0;
 	int		emitte = 0;
 };
@@ -99,8 +99,6 @@ struct AppState
 
 struct psData
 {
-	std::vector<Particle>	particles;
-	std::vector<float>		gpuVector;
 	AppState				state;
 	GpuSimulationState		gpuState;
 	VAO						vao;

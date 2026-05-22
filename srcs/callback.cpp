@@ -1,7 +1,6 @@
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
 #include "particle_system.hpp"
-#include "shape.hpp"
 
 namespace
 {

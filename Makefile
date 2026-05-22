@@ -34,7 +34,6 @@ SRCS		= $(SRCS_DIR)/main.cpp \
 			$(SRCS_DIR)/callback.cpp \
 			$(SRCS_DIR)/renderer.cpp \
 			$(SRCS_DIR)/utils.cpp \
-			$(SRCS_DIR)/shape.cpp \
 			$(SRCS_DIR)/external/glad.cpp \
 			$(CLASS_CPP)/VBO.cpp \
 			$(CLASS_CPP)/EBO.cpp \

@@ -17,22 +17,22 @@ std::string loadKernelSource(const std::string& filename)
 
 void initPhysicsMem(psData& data)
 {
-	std::vector<GpuPhysicalParticle> gpu_particles;
-	gpu_particles.reserve(data.particle_number);
+	// std::vector<GpuPhysicalParticle> gpu_particles;
+	// gpu_particles.reserve(data.particle_number);
 
-	for (const Particle& p : data.particles)
-	{
-		GpuPhysicalParticle gp;
-		gp.vel = p.vel;
-		gp.mass = p.mass;
-		gp.life = p.life;
-		gp.maxLife = p.maxLife;
-		gp.alive = p.alive;
-		gpu_particles.push_back(gp);
-	}
+	// for (unsigned int i = 0; i < data.particle_number; ++i)
+	// {
+	// 	GpuPhysicalParticle gp = {};
+	// 	// gp.vel = p.vel;
+	// 	// gp.mass = p.mass;
+	// 	// gp.life = p.life;
+	// 	// gp.maxLife = p.maxLife;
+	// 	// gp.alive = p.alive;
+	// 	gpu_particles.push_back(gp);
+	// }
 
 	clEnqueueWriteBuffer(data.queue, data.cl_physics_mem, CL_TRUE, 0, data.particle_number * sizeof(GpuPhysicalParticle),
-		gpu_particles.data(), 0, nullptr, nullptr);
+		nullptr, 0, nullptr, nullptr);
 }
 
 void initOpenCL(psData& data)
