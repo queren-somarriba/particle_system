@@ -4,12 +4,14 @@
 #include <iomanip>
 #include <sstream>
 #include "particle_system.hpp"
-#include "callback.hpp"
+#include "InputHandler.hpp"
 #include "cl.hpp"
 
 GLFWwindow* initWindow()
 {
-	glfwInitHint(GLFW_PLATFORM, GLFW_PLATFORM_X11);
+	#if defined(__linux__) && !defined(WAYLAND_DISPLAY)
+		glfwInitHint(GLFW_PLATFORM, GLFW_PLATFORM_X11);
+	#endif
 	if (!glfwInit())
 	{
 		std::cerr << "GLFW initialization failed" << std::endl;
@@ -79,7 +81,7 @@ namespace
 	void setUniformVal(psData& data)
 	{
 		mat4f view = data.state.camera.GetViewMatrix();
-		mat4f proj = mat4f::perspective(data.state.camera.zoom * (float)M_PI / 180.0f, (float)WIDTH/HEIGHT, 0.01f);	
+		mat4f proj = mat4f::perspective(data.state.camera.zoom * (float)M_PI / 180.0f, (float)WIDTH/HEIGHT, 0.1f);	
 		data.shader->use();
 		data.shader->setMat4("proj", proj);
 		data.shader->setMat4("view", view);

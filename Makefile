@@ -29,7 +29,7 @@ GLFLAGS				= -lglfw -lGL -lX11 -lpthread -ldl -lXrandr -lXinerama -lXcursor -lXi
 CLFLAGS				= -L./libs -lOpenCL
 
 SRCS		= $(SRCS_DIR)/main.cpp \
-			$(SRCS_DIR)/callback.cpp \
+			$(SRCS_DIR)/InputHandler.cpp \
 			$(SRCS_DIR)/renderer.cpp \
 			$(SRCS_DIR)/external/glad.cpp \
 			$(CLASS_CPP)/VBO.cpp \

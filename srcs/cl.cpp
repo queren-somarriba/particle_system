@@ -18,33 +18,70 @@ namespace
 
 void initOpenCL(psData& data)
 {
-	// cl_uint num_platforms = 0;
-	// cl_int err1 = clGetPlatformIDs(0, NULL, &num_platforms);
+	clGetPlatformIDs(1, &data.platform, nullptr);
+	cl_int err = clGetDeviceIDs(data.platform, CL_DEVICE_TYPE_GPU, 1, &data.device, nullptr);
+	if (err != CL_SUCCESS)
+	{
+		std::cerr << "Warning: no GPU found, falling back to CPU" << std::endl;
+		err = clGetDeviceIDs(data.platform, CL_DEVICE_TYPE_CPU, 1, &data.device, nullptr);
+		if (err != CL_SUCCESS)
+			throw std::runtime_error("No OpenCL device found at all");
+	}
 
-	// printf("Nombre de plateformes trouvees : %d (Code retour : %d)\n", num_platforms, err1);
+	size_t ext_size;
+	clGetDeviceInfo(data.device, CL_DEVICE_EXTENSIONS, 0, nullptr, &ext_size);
+	std::string exts(ext_size, '\0');
+	clGetDeviceInfo(data.device, CL_DEVICE_EXTENSIONS, ext_size, exts.data(), nullptr);
+	if (exts.find("cl_khr_gl_sharing") == std::string::npos)
+		throw std::runtime_error( "cl_khr_gl_sharing not supported.\n");
 
-	// std::cout << "platformID: " << clGetPlatformIDs(1, &(data.platform), nullptr) << std::endl;
-	// std::cout << "deviceID: " << clGetDeviceIDs(data.platform, CL_DEVICE_TYPE_GPU, 1, &(data.device), nullptr) << std::endl;
-	clGetPlatformIDs(1, &(data.platform), nullptr);
-	clGetDeviceIDs(data.platform, CL_DEVICE_TYPE_GPU, 1, &(data.device), nullptr);
+	cl_context_properties properties[7] = {};
+	int i = 0;
 
+	#if defined(_WIN32) // Windows
+	WGL HGLRC wgl_ctx = wglGetCurrentContext();
+	HDC wgl_dc = wglGetCurrentDC();
+	if (!wgl_ctx || !wgl_dc)
+		throw std::runtime_error("No WGL context found");
+	properties[i++] = CL_GL_CONTEXT_KHR;
+	properties[i++] = (cl_context_properties)wgl_ctx;
+	properties[i++] = CL_WGL_HDC_KHR;
+	properties[i++] = (cl_context_properties)wgl_dc;
+	#elif defined(__APPLE__) // macOS
+	CGLContextObj cgl_ctx = CGLGetCurrentContext();
+	CGLShareGroupObj cgl_grp = CGLGetShareGroup(cgl_ctx);
+	if (!cgl_ctx)
+		throw std::runtime_error("No CGL context found");
+	properties[i++] = CL_CONTEXT_PROPERTY_USE_CGL_SHAREGROUP_APPLE;
+	properties[i++] = (cl_context_properties)cgl_grp;
+	#else // Linux
 	GLXContext glx_ctx = glXGetCurrentContext();
 	Display* glx_dpy = glXGetCurrentDisplay();
-	if (!glx_ctx || !glx_dpy)
-		throw std::runtime_error("No GLX active context to create OpenCL context!");
-
-	cl_context_properties properties[] = {
-		CL_GL_CONTEXT_KHR,  (cl_context_properties)glx_ctx,
-		CL_GLX_DISPLAY_KHR, (cl_context_properties)glx_dpy,
-		CL_CONTEXT_PLATFORM,(cl_context_properties)(data.platform),
-		0
-	};
-
-	cl_int err;
-	data.context = clCreateContext(properties, 1, &(data.device), nullptr, nullptr, &err);
+	if (glx_ctx && glx_dpy)
+	{
+		properties[i++] = CL_GL_CONTEXT_KHR;
+		properties[i++] = (cl_context_properties)glx_ctx;
+		properties[i++] = CL_GLX_DISPLAY_KHR;
+		properties[i++] = (cl_context_properties)glx_dpy;
+	}
+	// else
+	// {
+	// 	EGLContext egl_ctx = eglGetCurrentContext();
+	// 	EGLDisplay egl_dpy = eglGetCurrentDisplay();
+	// 	if (!egl_ctx || !egl_dpy)
+	// 		throw std::runtime_error("No GL/EGL context found for OpenCL interop");
+	// 	properties[i++] = CL_GL_CONTEXT_KHR
+	// 	properties[i++] = (cl_context_properties)egl_ctx;
+	// 	properties[i++] = CL_EGL_DISPLAY_KHR;
+	// 	properties[i++] = (cl_context_properties)egl_dpy;
+	// }
+	#endif
+	properties[i++] = CL_CONTEXT_PLATFORM;
+	properties[i++] = (cl_context_properties)data.platform;
+	properties[i] = 0;
+	data.context = clCreateContext(properties, 1, &data.device, nullptr, nullptr, &err);
 	if (err != CL_SUCCESS)
-		std::cerr << "Error: clCreateContext. Code: " << err << std::endl;
-
+		throw std::runtime_error("clCreateContext failed: " + std::to_string(err));
 	data.queue = clCreateCommandQueueWithProperties(data.context, data.device, nullptr, nullptr);
 }
 

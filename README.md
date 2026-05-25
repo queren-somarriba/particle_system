@@ -86,7 +86,7 @@ Each work item corresponds to one particle. The kernel handles:
 │   ├── main.cpp          # Entry point, GL + CL init, main loop
 │   ├── renderer.cpp      # Render loop, uniforms, state management
 │   ├── cl.cpp            # OpenCL init, interop, kernel compilation
-│   └── callback.cpp      # Keyboard, mouse, scroll callbacks
+│   └── InputHandler.cpp      # Keyboard, mouse, scroll callbacks
 ├── shaders/
 │   ├── Particle.vs       # Vertex shader (MVP transform)
 │   └── Particle.fs       # Fragment shader (per-point color)

@@ -7,7 +7,7 @@
 #include <ctime>
 #include <cstring>
 #include "particle_system.hpp"
-#include "callback.hpp"
+#include "InputHandler.hpp"
 #include "mat4f.hpp"
 #include "shader.hpp"
 #include "VAO.hpp"
@@ -51,7 +51,6 @@ bool checkArgv(const char* argv)
 		std::cout << "  • Up / Down         : Move camera (Vertical axis)\n";
 
 		std::cout << CYAN << BOLD << "[ SIMULATION CONTROLS ]" << RESET << "\n";
-		std::cout << "  • G                 : Toggle dynamic gravity center\n";
 		std::cout << "  • Mouse Movement    : Gravity center follows the cursor (in dynamic mode)\n";
 		std::cout << "  • Spacebar          : Toggle Gravity Center (On/Off)\n";
 		std::cout << "  • Mouse Scroll      : Adjust Gravity Strength (+/-)\n";
@@ -59,8 +58,8 @@ bool checkArgv(const char* argv)
 		std::cout << "  • E (Hold)          : Emit Continuous Particles\n\n";
 
 		std::cout << CYAN << BOLD << "[ RENDU & MODES ]" << RESET << "\n";
-		std::cout << "  • C                 : Color Modes\n";
-		std::cout << "                        (Distance / Lifetime -> Velocity)\n";
+		std::cout << "  • G                 : Toggle dynamic gravity center\n";
+		std::cout << "  • C                 : Color Modes (Distance / Lifetime -> Velocity)\n";
 		std::cout << "  • L                 : Toggle Particle Lifespan\n";
 		std::cout << "  • R                 : Reset Shapes (Cube -> Sphere)\n\n";
 
