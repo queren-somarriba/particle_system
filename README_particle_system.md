@@ -1,6 +1,6 @@
 # Particle System
 
-A GPU-based particle system using OpenGL + OpenCL with GL/CL interoperability, real-time physics simulation, and point-sprite rendering.
+A GPU-based 3D particle system built in C++ using OpenGL + OpenCL with GL/CL interoperability, real-time physics simulation, and point-sprite rendering.
 
 ## Dependencies
 
@@ -34,9 +34,10 @@ The particle count must be between `1` and `10,000,000`.
 |---|---|
 | `W` / `A` / `S` / `D` | Move camera (horizontal plane) |
 | `↑` / `↓` | Move camera up / down |
-| `Mouse` | Move the gravity center |
+| `Mouse` | Move the gravity center (in dynamic gravity mode)|
 | `Scroll` | Adjust gravity strength (G between 0 and 20) |
 | `Space` | Toggle gravity on / off |
+| `G` | Toggle dynamic gravity mode |
 | `T` (hold) | Inject turbulence |
 | `E` (hold) | Continuously emit particles |
 | `C` | Cycle color mode (distance / lifetime → velocity) |
@@ -52,27 +53,8 @@ The particle count must be between `1` and `10,000,000`.
 - Turbulence via 3D value noise
 - Two reset shapes: cube or sphere
 - Configurable particle lifespan (mortality toggle)
-- Two color modes: distance to center or particle speed
-- Smooth gravity center interpolation toward the mouse target
+- Two color modes: distance to center and life time or particle speed
 - Real-time FPS display in the window title
-
-## Structure
-
-```
-.
-├── src/
-│   ├── main.cpp          # Entry point, GL + CL init, main loop
-│   ├── renderer.cpp      # Render loop, uniforms, state management
-│   ├── cl.cpp            # OpenCL init, interop, kernel compilation
-│   └── callback.cpp      # Keyboard, mouse, scroll callbacks
-├── shaders/
-│   ├── Particle.vs       # Vertex shader (MVP transform)
-│   └── Particle.fs       # Fragment shader (per-point color)
-├── kernels/
-│   └── simulation.cl     # OpenCL kernel: physics, turbulence, reset
-└── include/
-    └── particle_system.hpp
-```
 
 ## GPU Architecture
 
@@ -96,8 +78,29 @@ Each work item corresponds to one particle. The kernel handles:
 - Lifespan management and particle re-emission
 - Color computation (distance or speed mode)
 
+## Structure
+
+```
+.
+├── src/
+│   ├── main.cpp          # Entry point, GL + CL init, main loop
+│   ├── renderer.cpp      # Render loop, uniforms, state management
+│   ├── cl.cpp            # OpenCL init, interop, kernel compilation
+│   └── callback.cpp      # Keyboard, mouse, scroll callbacks
+├── shaders/
+│   ├── Particle.vs       # Vertex shader (MVP transform)
+│   └── Particle.fs       # Fragment shader (per-point color)
+├── kernels/
+│   └── simulation.cl     # OpenCL kernel: physics, turbulence, reset
+└── include/
+    └── particle_system.hpp
+```
+
 ## Notes
 
 - Requires a GPU supporting `cl_khr_gl_sharing` and an active GLX context
 - Tested on Linux/X11 only (GLX context is explicitly required)
 - Beyond ~5M particles, performance is highly GPU-dependent
+- 60 FPS smoothly maintained at 1,000,000 particles.
+- 30 FPS sustained at 3,000,000 particles.
+
