@@ -89,6 +89,8 @@ struct AppState
 	bool	r_pressed = false;
 	bool	l_pressed = false;
 	bool	c_pressed = false;
+	bool	g_pressed = false;
+	bool	staticGravity = true;
 	bool	mouse_in_window = false;
 	
 	AppState() : 

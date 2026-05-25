@@ -240,11 +240,11 @@ inline void computeSpeedColor(__private float3* color, float3 vel)
 {
 	float speed = length(vel);
 
-	const float V_MAX = 10.0f;
+	const float V_MAX = 8.0f;
 	float t = clamp(speed / V_MAX, 0.0f, 1.0f);
 
-	float3 color_slow = (float3)(0.5f, 0.0f, 1.0f); // Violet
-	float3 color_fast = (float3)(1.0f, 0.5f, 0.0f); // Orange
+	float3 color_slow = (float3)(0.5f, 0.0f, 1.0f);
+	float3 color_fast = (float3)(1.0f, 0.5f, 0.0f);
 
 	t = native_sqrt(t);
 	*color = mix(color_slow, color_fast, t);

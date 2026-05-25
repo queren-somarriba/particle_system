@@ -18,6 +18,13 @@ namespace
 
 void initOpenCL(psData& data)
 {
+	// cl_uint num_platforms = 0;
+	// cl_int err1 = clGetPlatformIDs(0, NULL, &num_platforms);
+
+	// printf("Nombre de plateformes trouvees : %d (Code retour : %d)\n", num_platforms, err1);
+
+	// std::cout << "platformID: " << clGetPlatformIDs(1, &(data.platform), nullptr) << std::endl;
+	// std::cout << "deviceID: " << clGetDeviceIDs(data.platform, CL_DEVICE_TYPE_GPU, 1, &(data.device), nullptr) << std::endl;
 	clGetPlatformIDs(1, &(data.platform), nullptr);
 	clGetDeviceIDs(data.platform, CL_DEVICE_TYPE_GPU, 1, &(data.device), nullptr);
 

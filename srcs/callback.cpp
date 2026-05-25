@@ -48,6 +48,14 @@ void processInput(GLFWwindow *window, psData& data)
 		data.state.gpuState.emitte = true;
 	if (glfwGetKey(window, GLFW_KEY_E) == GLFW_RELEASE)
 		data.state.gpuState.emitte = false;
+	/* G */
+	if (glfwGetKey(window, GLFW_KEY_G) == GLFW_PRESS && !data.state.g_pressed)
+	{
+		data.state.staticGravity = !data.state.staticGravity;
+		data.state.g_pressed = true;
+	}
+	if (glfwGetKey(window, GLFW_KEY_G) == GLFW_RELEASE)
+		data.state.g_pressed = false;
 	/* L */
 	if (glfwGetKey(window, GLFW_KEY_L) == GLFW_PRESS && !data.state.l_pressed)
 	{
@@ -101,7 +109,7 @@ void cursor_position_callback(GLFWwindow* window, double xpos, double ypos)
 {
 	psData* data = reinterpret_cast<psData*>(glfwGetWindowUserPointer(window));
 
-	if (!data->state.mouse_in_window)
+	if (!data->state.mouse_in_window || data->state.staticGravity)
 		return;
 
 	float x = 0;
