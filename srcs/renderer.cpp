@@ -79,25 +79,10 @@ namespace
 	void setUniformVal(psData& data)
 	{
 		mat4f view = data.state.camera.GetViewMatrix();
-		mat4f proj = mat4f::perspective(data.state.camera.zoom * (float)M_PI / 180.0f, (float)WIDTH/HEIGHT, 0.1f);	
+		mat4f proj = mat4f::perspective(data.state.camera.zoom * (float)M_PI / 180.0f, (float)WIDTH/HEIGHT, 0.01f);	
 		data.shader->use();
 		data.shader->setMat4("proj", proj);
 		data.shader->setMat4("view", view);
-	}
-
-	void updateGravityCenter(psData& data)
-	{
-		const float speed = 2.f;
-		vect4f targetDir = data.state.targetCenter - data.state.gpuState.gCenter;
-		float dist = targetDir.length();
-
-		if (dist > 1e-5f) 
-		{
-			float step = speed * data.state.gpuState.deltaTime;
-			step >= dist ?
-				data.state.gpuState.gCenter = data.state.targetCenter
-			:	data.state.gpuState.gCenter += targetDir.normalize() * step;
-		}
 	}
 }
 
@@ -106,9 +91,12 @@ void renderParticles(GLFWwindow* window, psData& data)
 	processInput(window, data);
 	updateAppState(window, data.state);
 
+	clEnqueueWriteBuffer(data.queue, data.cl_state_mem, CL_TRUE, 0, sizeof(GpuSimulationState),
+							&data.state.gpuState, 0, nullptr, nullptr);
+
 	clSetKernelArg(data.kernel, 0, sizeof(cl_mem), &data.cl_vbo_mem);
 	clSetKernelArg(data.kernel, 1, sizeof(cl_mem), &data.cl_physics_mem);
-	clSetKernelArg(data.kernel, 2, sizeof(GpuSimulationState), &data.state.gpuState);
+	clSetKernelArg(data.kernel, 2, sizeof(cl_mem), &data.cl_state_mem);
 
 	glFinish();
 	clEnqueueAcquireGLObjects(data.queue, 1, &(data.cl_vbo_mem), 0, nullptr, nullptr);
@@ -122,8 +110,7 @@ void renderParticles(GLFWwindow* window, psData& data)
 	glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-	setUniformVal(data);
-	updateGravityCenter(data);
+	setUniformVal(data); 	
 
 	data.vao.bind();
 	glDrawArrays(GL_POINTS, 0,  data.particle_number);

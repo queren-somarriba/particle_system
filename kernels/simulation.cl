@@ -20,14 +20,14 @@ typedef struct
 	int		speedColor;
 } __attribute__ ((aligned (16))) GpuSimulationState;
 
-typedef struct __attribute__ ((packed))
+typedef struct
 {
 	float4	vel;
 	float	mass;
 	float	life;
 	float	maxLife;
 	int		alive;
-} GpuPhysicalParticle;
+} __attribute__ ((aligned (16))) GpuPhysicalParticle;
 
 
 /*********** FUNCTIONS ***********/
@@ -118,14 +118,17 @@ inline float3 computeVel(float3 pos, float3 gCenter, unsigned int seed)
 
 	float tlen = length(tangent);
 	if (tlen > 1e-5f)
-		tangent = tangent * (1.f / tlen);
+		tangent = fast_normalize(tangent);
 
 	float speed = 0.3f + extract_random(&seed) * 0.4f;
 
 	return tangent * speed;	
 }
 
-inline void initCube(__private float3* pos, __private float3* color, __private GpuPhysicalParticle* physics, GpuSimulationState state, int id)
+inline void initCube(__private float3* pos,
+						__private float3* color,
+							__private GpuPhysicalParticle* physics,
+								__constant GpuSimulationState* state, int id)
 {
 	unsigned int seed = id;
 	*pos = (float3)(
@@ -133,9 +136,9 @@ inline void initCube(__private float3* pos, __private float3* color, __private G
 				(extract_random(&seed) * 2.f - 1.f) * 0.5f,
 				(extract_random(&seed) * 2.f - 1.f) * 0.5f
 	);
-	physics->vel.xyz = computeVel(*pos, state.gCenter.xyz, seed);
+	physics->vel.xyz = computeVel(*pos, state->gCenter.xyz, seed);
 	physics->mass = 1.f;
-	float3 gdir = state.gCenter.xyz - *pos;
+	float3 gdir = state->gCenter.xyz - *pos;
 	float gdist = length(gdir);
 	physics->maxLife = 2.f + extract_random(&seed) * 4.f;
 	physics->life = physics->maxLife;
@@ -143,7 +146,11 @@ inline void initCube(__private float3* pos, __private float3* color, __private G
 	*color = (float3)(gdist, 0.f, physics->maxLife - physics->life);
 }
 
-inline void initSphere(__private float3* pos, __private float3* color, __private GpuPhysicalParticle* physics, GpuSimulationState state, int id)
+inline void initSphere(__private float3* pos,
+							__private float3* color,
+								__private GpuPhysicalParticle* physics,
+									__constant GpuSimulationState* state,
+										int id)
 {
 	unsigned int seed = id;
 	float u = extract_random(&seed);
@@ -160,9 +167,9 @@ inline void initSphere(__private float3* pos, __private float3* color, __private
 			r * cos(phi)
 	);
 
-	physics->vel.xyz = computeVel(*pos, state.gCenter.xyz, seed);
+	physics->vel.xyz = computeVel(*pos, state->gCenter.xyz, seed);
 	physics->mass = 1.f;
-	float3 gdir = state.gCenter.xyz - *pos;
+	float3 gdir = state->gCenter.xyz - *pos;
 	float gdist = length(gdir);
 	physics->maxLife = 2.f + extract_random(&seed) * 4.f;
 	physics->life = physics->maxLife;
@@ -172,11 +179,15 @@ inline void initSphere(__private float3* pos, __private float3* color, __private
 
 // Emitter
 
-inline 	void emitOne(__private float3* pos, __private float3* color, __private GpuPhysicalParticle* physics, GpuSimulationState state, int id)
+inline 	void emitOne(__private float3* pos,
+						__private float3* color,
+							__private GpuPhysicalParticle* physics,
+								__constant GpuSimulationState* state,
+									int id)
 {
-	float time = state.time;
+	float time = state->time;
 	unsigned int seed = id + (unsigned int)(time * 1000.0f);
-	*pos  = state.gCenter.xyz;
+	*pos  = state->gCenter.xyz;
 	//velmin + randf() * (velmax - velmin)
 	physics->vel.xyz  = (float3)(
 		-0.05f + extract_random(&seed) * (0.05f - -0.05f),
@@ -196,9 +207,13 @@ inline 	void emitOne(__private float3* pos, __private float3* color, __private G
 
 // Physic
 
-inline void PhysicUpdate(__private float3* pos, __private float3* color, __private GpuPhysicalParticle* physics, GpuSimulationState state)
+inline void PhysicUpdate(__private float3* pos,
+							__private float3* color,
+								__private GpuPhysicalParticle* physics,
+									__constant GpuSimulationState* state
+																		)
 {
-	const float G = (state.gravity != 0 ? state.G : 0.f);
+	const float G = (state->gravity != 0 ? state->G : 0.f);
 	const float softening = 0.5f;
 	const float dampling = 0.995f;
 	const float turbulenceStrength = 0.4f;
@@ -207,21 +222,21 @@ inline void PhysicUpdate(__private float3* pos, __private float3* color, __priva
 	float life = physics->life;
 	float maxLife = physics->maxLife;
 
-	float3 dir = state.gCenter.xyz - *pos;
+	float3 dir = state->gCenter.xyz - *pos;
 	float gDist = length(dir);
 	if (gDist > 1e-5f)
 	{
 		float magnitude = G / (gDist * gDist + softening * softening);
-		vel += (dir / gDist) * magnitude * state.deltaTime;
+		vel += fast_normalize(dir) * magnitude * state->deltaTime;
 	}
 
-	if (state.turbulence == 1)
+	if (state->turbulence == 1)
 	{
-		float3 turb = compute_turbulence(*pos, state.time, turbulenceStrength, turbulenceFreq);
-		vel += turb * state.deltaTime;
+		float3 turb = compute_turbulence(*pos, state->time, turbulenceStrength, turbulenceFreq);
+		vel += turb * state->deltaTime;
 	}
 
-	*pos += vel * state.deltaTime;
+	*pos += vel * state->deltaTime;
 	vel *= dampling;
 
 	float t = life / maxLife;
@@ -240,7 +255,7 @@ inline void computeSpeedColor(__private float3* color, float3 vel)
 {
 	float speed = length(vel);
 
-	const float V_MAX = 8.0f;
+	const float V_MAX = 5.0f;
 	float t = clamp(speed / V_MAX, 0.0f, 1.0f);
 
 	float3 color_slow = (float3)(0.5f, 0.0f, 1.0f);
@@ -254,54 +269,45 @@ inline void computeSpeedColor(__private float3* color, float3 vel)
 
 __kernel void update_particles(__global float* vbo_data, 
 								__global GpuPhysicalParticle* physics,
-								GpuSimulationState state
+								__constant GpuSimulationState* state
                                )
 {
 	int id = get_global_id(0);
 
 	int vbo_index = id * 6;
 	float3 pos = (float3)(vbo_data[vbo_index], vbo_data[vbo_index + 1], vbo_data[vbo_index + 2]);
-	float3 color = (float3)(vbo_data[vbo_index + 3], vbo_data[vbo_index + 5], vbo_data[vbo_index + 5]);
-	GpuPhysicalParticle tmp = physics[id];
+	float3 color = (float3)(vbo_data[vbo_index + 3], vbo_data[vbo_index + 4], vbo_data[vbo_index + 5]);
+	GpuPhysicalParticle physic = physics[id];
 
-	if (state.cube == 1)
-	{
-		initCube(&pos, &color, &tmp, state, id);
-		physics[id] = tmp;
-	}
+	if (state->cube == 1)
+		initCube(&pos, &color, &physic, state, id);
 
-	if (state.sphere == 1)
-	{
-		initSphere(&pos, &color, &tmp, state, id);
-		physics[id] = tmp;
-	}
+	if (state->sphere == 1)
+		initSphere(&pos, &color, &physic, state, id);
 
-	if (state.emitte && !physics[id].alive)
-	{
-		emitOne(&pos, &color, &tmp, state, id);
-		physics[id] = tmp;
-	}
-	else if (!physics[id].alive)
+	if (state->emitte && !physic.alive)
+		emitOne(&pos, &color, &physic, state, id);
+
+	else if (!physic.alive)
 	{
 		vbo_data[vbo_index] = 99999.f;
 		return;
 	}
 
-	if (!state.immortal)
-		physics[id].life -= state.deltaTime;
-	if (physics[id].life <= 0.f)
+	if (!state->immortal)
+		physic.life -= state->deltaTime;
+	if (physic.life <= 0.f)
 	{
 		physics[id].alive = 0;
 		vbo_data[vbo_index] = 99999.f;
 		return;
 	}
 
-	tmp = physics[id];
-	PhysicUpdate(&pos, &color, &tmp, state);
-	physics[id] = tmp;
+	PhysicUpdate(&pos, &color, &physic, state);
+	physics[id] = physic;
 
-	if (state.speedColor)
-		computeSpeedColor(&color, physics[id].vel.xyz);
+	if (state->speedColor)
+		computeSpeedColor(&color, physic.vel.xyz);
 
 	vbo_data[vbo_index + 0] = pos.x;
 	vbo_data[vbo_index + 1] = pos.y;

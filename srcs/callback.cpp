@@ -134,5 +134,5 @@ void cursor_position_callback(GLFWwindow* window, double xpos, double ypos)
 		worldPos.y /= worldPos.w;
 		worldPos.z = data->state.gpuState.gCenter.z;
 	}
-	data->state.targetCenter = worldPos;
+	data->state.gpuState.gCenter = worldPos;
 }

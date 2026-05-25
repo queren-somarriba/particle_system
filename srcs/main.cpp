@@ -51,7 +51,8 @@ bool checkArgv(const char* argv)
 		std::cout << "  • Up / Down         : Move camera (Vertical axis)\n";
 
 		std::cout << CYAN << BOLD << "[ SIMULATION CONTROLS ]" << RESET << "\n";
-		std::cout << "  • Mouse Movement    : Gravity center follows the cursor\n\n";
+		std::cout << "  • G                 : Toggle dynamic gravity center\n";
+		std::cout << "  • Mouse Movement    : Gravity center follows the cursor (in dynamic mode)\n";
 		std::cout << "  • Spacebar          : Toggle Gravity Center (On/Off)\n";
 		std::cout << "  • Mouse Scroll      : Adjust Gravity Strength (+/-)\n";
 		std::cout << "  • T (Hold)          : Inject Turbulence\n";

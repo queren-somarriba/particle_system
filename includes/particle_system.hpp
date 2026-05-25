@@ -77,26 +77,20 @@ struct alignas(16) GpuSimulationState
 
 struct AppState
 {
-	Camera	camera;
+	Camera	camera = Camera(vect4f(0.0f, 0.0f, 3.0f));
 	GpuSimulationState	gpuState;
 	mat4f	invWorld;
-	vect4f	targetCenter;
-	float	lastFrame;
+	float	lastFrame = 0.f;
 	float	second;
 	size_t	fpsCounter;
 	Shape	shape = CUBE;
-	bool	space_pressed;
+	bool	space_pressed = false;
 	bool	r_pressed = false;
 	bool	l_pressed = false;
 	bool	c_pressed = false;
 	bool	g_pressed = false;
 	bool	staticGravity = true;
 	bool	mouse_in_window = false;
-	
-	AppState() : 
-		camera(vect4f(0.0f, 0.0f, 3.0f)),
-		targetCenter(vect4f(0.f, 0.f, 0.f)),
-		lastFrame(0.0f), space_pressed(false) {}
 };
 
 struct psData
@@ -115,6 +109,7 @@ struct psData
 	cl_kernel				kernel;
 	cl_mem					cl_vbo_mem;
 	cl_mem					cl_physics_mem;
+	cl_mem					cl_state_mem;
 };
 
 void setupGpuData(psData& data, std::vector<float> gpuVector);

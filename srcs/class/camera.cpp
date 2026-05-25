@@ -28,11 +28,11 @@ void Camera::ProcessKeyboard(Camera_Movement direction, float deltaTime)
 		this->pos -= this->front * velocity;
 	if (direction == RIGHT && this->pos.x + this->right.x * velocity < 5.f)
 		this->pos += this->right * velocity;
-	if (direction == LEFT && this->pos.x - this->front.x * velocity > -5.f)
+	if (direction == LEFT && this->pos.x - this->right.x * velocity > -5.f)
 		this->pos -= this->right * velocity;
-	if (direction == UP && this->pos.y + this->right.y * velocity < 5.f)
+	if (direction == UP && this->pos.y + this->up.y * velocity < 5.f)
 		this->pos += this->up * velocity;
-	if (direction == DOWN && this->pos.y - this->front.y * velocity > -5.f)
+	if (direction == DOWN && this->pos.y - this->up.y * velocity > -5.f)
 		this->pos -= this->up * velocity;
 }
 

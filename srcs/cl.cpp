@@ -46,8 +46,6 @@ void initOpenCL(psData& data)
 		std::cerr << "Error: clCreateContext. Code: " << err << std::endl;
 
 	data.queue = clCreateCommandQueueWithProperties(data.context, data.device, nullptr, nullptr);
-	clEnqueueWriteBuffer(data.queue, data.cl_physics_mem, CL_TRUE, 0, data.particle_number * sizeof(GpuPhysicalParticle),
-		nullptr, 0, nullptr, nullptr);
 }
 
 void initInteropAndKernel(psData& data)
@@ -57,12 +55,17 @@ void initInteropAndKernel(psData& data)
 	glFinish(); 
 
 	data.cl_vbo_mem = clCreateFromGLBuffer(data.context, CL_MEM_READ_WRITE, static_cast<cl_GLuint>(data.vbo->id), &err);
-	if (err != CL_SUCCESS) {
+	if (err != CL_SUCCESS)
 		std::cerr << "Error: clCreateFromGLBuffer. Code: " << err << std::endl;
-	}
 
 	data.cl_physics_mem = clCreateBuffer(data.context, CL_MEM_READ_WRITE,
 		data.particle_number * sizeof(GpuPhysicalParticle), nullptr, &err);
+
+	if (err != CL_SUCCESS)
+		std::cerr << "Error: clCreateBuffer. Code: " << err << std::endl;
+
+	data.cl_state_mem = clCreateBuffer(data.context, CL_MEM_READ_WRITE,
+		sizeof(GpuSimulationState), nullptr, &err);
 
 	if (err != CL_SUCCESS)
 		std::cerr << "Error: clCreateBuffer. Code: " << err << std::endl;
