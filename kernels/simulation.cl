@@ -101,30 +101,6 @@ inline float3 compute_turbulence(float3 pos, float time, float strength, float f
 
 // Init Shapes
 
-inline float3 computeVel(float3 pos, float3 gCenter, unsigned int seed)
-{
-	float3 dir = pos - gCenter;
-	float dlen = length(dir);
-
-	if (dlen > 1e-5f)
-		dir = dir * (1.f / dlen);
-
-	float3 up = (fabs(dir.y) < 0.9f) ? (float3)(0.f, 1.f, 0.f) : (float3)(1.f, 0.f, 0.f);
-	float3 tangent = (float3)(
-		dir.y * up.z - dir.z * up.y,
-		dir.z * up.x - dir.x * up.z,
-		dir.x * up.y - dir.y * up.x
-	);
-
-	float tlen = length(tangent);
-	if (tlen > 1e-5f)
-		tangent = fast_normalize(tangent);
-
-	float speed = 0.3f + extract_random(&seed) * 0.4f;
-
-	return tangent * speed;	
-}
-
 inline void initCube(__private float3* pos,
 						__private float3* color,
 							__private GpuPhysicalParticle* physics,
@@ -136,7 +112,7 @@ inline void initCube(__private float3* pos,
 				(extract_random(&seed) * 2.f - 1.f) * 0.5f,
 				(extract_random(&seed) * 2.f - 1.f) * 0.5f
 	);
-	physics->vel.xyz = computeVel(*pos, state->gCenter.xyz, seed);
+	physics->vel.xyz = (float3)(0.f, 0.f, 0.f);
 	physics->mass = 1.f;
 	float3 gdir = state->gCenter.xyz - *pos;
 	float gdist = length(gdir);
@@ -167,7 +143,7 @@ inline void initSphere(__private float3* pos,
 			r * cos(phi)
 	);
 
-	physics->vel.xyz = computeVel(*pos, state->gCenter.xyz, seed);
+	physics->vel.xyz = (float3)(0.f, 0.f, 0.f);
 	physics->mass = 1.f;
 	float3 gdir = state->gCenter.xyz - *pos;
 	float gdist = length(gdir);
