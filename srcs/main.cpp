@@ -92,12 +92,14 @@ int main(int argc, char** argv)
 
 	try
 	{
-		GLFWwindow* window = initWindow();
+		AppState tmp = {};
+		GLFWwindow* window = initWindow(tmp);
 		if (!window)
 			return 1;
-	
 		psData data = {};
 		data.particle_number = std::stol(argv[1]);
+		data.state.fbWidth = tmp.fbWidth;
+		data.state.fbHeight = tmp.fbHeight;
 		
 		displayControls();
 		if (data.particle_number <= 10000000 && data.particle_number > 0)

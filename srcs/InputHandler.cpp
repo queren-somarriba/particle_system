@@ -98,29 +98,33 @@ void scroll_callback(GLFWwindow* window, double xoffset, double yoffset)
 
 void cursor_enter_callback(GLFWwindow* window, int entered)
 {
+	std::cout << "mouse_enter_callback\n";
 	psData* data = reinterpret_cast<psData*>(glfwGetWindowUserPointer(window));
 	if (entered)
 		data->state.mouse_in_window = true;
 	else
 		data->state.mouse_in_window = false;
-}
+} 
 
 void cursor_position_callback(GLFWwindow* window, double xpos, double ypos)
 {
 	psData* data = reinterpret_cast<psData*>(glfwGetWindowUserPointer(window));
 
+	std::cout << "mouse: " << data->state.mouse_in_window << std::endl;
 	if (!data->state.mouse_in_window || data->state.staticGravity)
 		return;
 
-	float x = 0;
-	float y = 0;
+	int winWidth, winHeight;
+	glfwGetWindowSize(window, &winWidth, &winHeight);
 
 	glfwGetCursorPos(window, &xpos, &ypos);
-	if (xpos >= 0.f && xpos <= static_cast<double>(WIDTH))
-		x = ( 2.f * static_cast<float>(xpos) / static_cast<float>(WIDTH)) - 1.f;
 
-	if (ypos >= 0.f && ypos <= static_cast<double>(HEIGHT))
-		y = 1.f -(2.f * static_cast<float>(ypos)  / static_cast<float>(HEIGHT));
+	float x = 0.f, y = 0.f;
+
+	if (xpos >= 0.0 && xpos <= (double)winWidth)
+		x = (2.f * (float)xpos / (float)winWidth) - 1.f;
+	if (ypos >= 0.0 && ypos <= (double)winHeight)
+		y = 1.f - (2.f * (float)ypos / (float)winHeight);
 
 	x = std::max(-1.0f, std::min(1.0f, x));
 	y = std::max(-1.0f, std::min(1.0f, y));

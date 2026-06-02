@@ -2,6 +2,9 @@
 #include "cl.hpp"
 #include <fstream>
 #include <sstream>
+#ifdef __APPLE__
+	#include <OpenGL/OpenGL.h>
+#endif
 
 namespace
 {
@@ -19,42 +22,49 @@ namespace
 void initOpenCL(psData& data)
 {
 	clGetPlatformIDs(1, &data.platform, nullptr);
-	cl_int err = clGetDeviceIDs(data.platform, CL_DEVICE_TYPE_GPU, 1, &data.device, nullptr);
-	if (err != CL_SUCCESS)
+
+	cl_uint num_devices = 0;
+	cl_int err;
+	clGetDeviceIDs(data.platform, CL_DEVICE_TYPE_GPU, 0, nullptr, &num_devices);
+	std::vector<cl_device_id> devices(num_devices);
+	clGetDeviceIDs(data.platform, CL_DEVICE_TYPE_GPU, num_devices, devices.data(), nullptr);
+
+	data.device = devices[0];
+	for (cl_uint i = 0; i < num_devices; i++)
 	{
-		std::cerr << "Warning: no GPU found, falling back to CPU" << std::endl;
-		err = clGetDeviceIDs(data.platform, CL_DEVICE_TYPE_CPU, 1, &data.device, nullptr);
-		if (err != CL_SUCCESS)
-			throw std::runtime_error("No OpenCL device found at all");
+		char vendor[128] = {};
+		clGetDeviceInfo(devices[i], CL_DEVICE_VENDOR, sizeof(vendor), vendor, nullptr);
+		std::string v(vendor);
+		if (v.find("AMD") != std::string::npos || v.find("ATI") != std::string::npos)// to do - check 42
+		{
+			data.device = devices[i];
+			break;
+		}
 	}
 
 	size_t ext_size;
 	clGetDeviceInfo(data.device, CL_DEVICE_EXTENSIONS, 0, nullptr, &ext_size);
 	std::string exts(ext_size, '\0');
-	clGetDeviceInfo(data.device, CL_DEVICE_EXTENSIONS, ext_size, exts.data(), nullptr);
+	clGetDeviceInfo(data.device, CL_DEVICE_EXTENSIONS, ext_size, (void*)exts.data(), nullptr);
+	
+	#ifdef __APPLE__
+	if (exts.find("cl_APPLE_gl_sharing") == std::string::npos)
+		throw std::runtime_error("cl_APPLE_gl_sharing not supported.");
+	#else
 	if (exts.find("cl_khr_gl_sharing") == std::string::npos)
-		throw std::runtime_error( "cl_khr_gl_sharing not supported.\n");
-
+		throw std::runtime_error("cl_khr_gl_sharing not supported.");
+	#endif
 	cl_context_properties properties[7] = {};
 	int i = 0;
 
-	#if defined(_WIN32) // Windows
-	WGL HGLRC wgl_ctx = wglGetCurrentContext();
-	HDC wgl_dc = wglGetCurrentDC();
-	if (!wgl_ctx || !wgl_dc)
-		throw std::runtime_error("No WGL context found");
-	properties[i++] = CL_GL_CONTEXT_KHR;
-	properties[i++] = (cl_context_properties)wgl_ctx;
-	properties[i++] = CL_WGL_HDC_KHR;
-	properties[i++] = (cl_context_properties)wgl_dc;
-	#elif defined(__APPLE__) // macOS
+	#if defined(__APPLE__)
 	CGLContextObj cgl_ctx = CGLGetCurrentContext();
 	CGLShareGroupObj cgl_grp = CGLGetShareGroup(cgl_ctx);
 	if (!cgl_ctx)
 		throw std::runtime_error("No CGL context found");
 	properties[i++] = CL_CONTEXT_PROPERTY_USE_CGL_SHAREGROUP_APPLE;
 	properties[i++] = (cl_context_properties)cgl_grp;
-	#else // Linux
+	#else
 	GLXContext glx_ctx = glXGetCurrentContext();
 	Display* glx_dpy = glXGetCurrentDisplay();
 	if (glx_ctx && glx_dpy)
@@ -64,17 +74,6 @@ void initOpenCL(psData& data)
 		properties[i++] = CL_GLX_DISPLAY_KHR;
 		properties[i++] = (cl_context_properties)glx_dpy;
 	}
-	// else
-	// {
-	// 	EGLContext egl_ctx = eglGetCurrentContext();
-	// 	EGLDisplay egl_dpy = eglGetCurrentDisplay();
-	// 	if (!egl_ctx || !egl_dpy)
-	// 		throw std::runtime_error("No GL/EGL context found for OpenCL interop");
-	// 	properties[i++] = CL_GL_CONTEXT_KHR
-	// 	properties[i++] = (cl_context_properties)egl_ctx;
-	// 	properties[i++] = CL_EGL_DISPLAY_KHR;
-	// 	properties[i++] = (cl_context_properties)egl_dpy;
-	// }
 	#endif
 	properties[i++] = CL_CONTEXT_PLATFORM;
 	properties[i++] = (cl_context_properties)data.platform;
@@ -82,7 +81,11 @@ void initOpenCL(psData& data)
 	data.context = clCreateContext(properties, 1, &data.device, nullptr, nullptr, &err);
 	if (err != CL_SUCCESS)
 		throw std::runtime_error("clCreateContext failed: " + std::to_string(err));
-	data.queue = clCreateCommandQueueWithProperties(data.context, data.device, nullptr, nullptr);
+	#ifdef __APPLE__
+		data.queue = clCreateCommandQueue(data.context, data.device, 0, nullptr);
+	#else
+		data.queue = clCreateCommandQueueWithProperties(data.context, data.device, nullptr, nullptr);
+	#endif
 }
 
 void initInteropAndKernel(psData& data)
@@ -97,15 +100,24 @@ void initInteropAndKernel(psData& data)
 
 	data.cl_physics_mem = clCreateBuffer(data.context, CL_MEM_READ_WRITE,
 		data.particle_number * sizeof(GpuPhysicalParticle), nullptr, &err);
-
 	if (err != CL_SUCCESS)
 		std::cerr << "Error: clCreateBuffer. Code: " << err << std::endl;
 
 	data.cl_state_mem = clCreateBuffer(data.context, CL_MEM_READ_WRITE,
 		sizeof(GpuSimulationState), nullptr, &err);
-
 	if (err != CL_SUCCESS)
 		std::cerr << "Error: clCreateBuffer. Code: " << err << std::endl;
+
+	float zero = 0.f;
+	clEnqueueFillBuffer(data.queue, data.cl_physics_mem, &zero, sizeof(float),
+		0, data.particle_number * sizeof(GpuPhysicalParticle), 0, nullptr, nullptr);
+	clEnqueueAcquireGLObjects(data.queue, 1, &data.cl_vbo_mem, 0, nullptr, nullptr);
+	clEnqueueFillBuffer(data.queue, data.cl_vbo_mem, &zero, sizeof(float),
+		0, data.particle_number * 6 * sizeof(float), 0, nullptr, nullptr);
+	clEnqueueReleaseGLObjects(data.queue, 1, &data.cl_vbo_mem, 0, nullptr, nullptr);
+	clFinish(data.queue);
+
+	data.state.gpuState.cube = 1;
 
 	std::string source_str = loadKernelSource("./kernels/simulation.cl");
 	size_t source_size = source_str.length();
@@ -113,8 +125,11 @@ void initInteropAndKernel(psData& data)
 
 	data.program = clCreateProgramWithSource(data.context, 1, &kernel_source, &source_size, &err);
 
-	err = clBuildProgram(data.program, 1, &(data.device), "-cl-std=CL2.0", nullptr, nullptr);
-
+	#ifdef __APPLE__
+		err = clBuildProgram(data.program, 1, &(data.device), "-cl-std=CL1.2", nullptr, nullptr);
+	#else
+		err = clBuildProgram(data.program, 1, &(data.device), "-cl-std=CL2.0", nullptr, nullptr);
+	#endif
 	if (err != CL_SUCCESS)
 	{
 		size_t log_size;

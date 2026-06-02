@@ -7,24 +7,27 @@
 #include "shader.hpp"
 #include <vector>
 #include <memory>
-#include <GL/glx.h>
 
 #ifndef CL_TARGET_OPENCL_VERSION
-    #define CL_TARGET_OPENCL_VERSION 200
+#ifdef __APPLE__
+	#define CL_TARGET_OPENCL_VERSION 120
+#else
+	#define CL_TARGET_OPENCL_VERSION 200
+#endif
 #endif
 
 #ifdef __APPLE__
-    #include <OpenCL/opencl.h>
+	#include <OpenCL/opencl.h>
 #else
-    #include <CL/cl.h>
-    #include <CL/cl_gl.h>
+	#include <CL/cl.h>
+	#include <CL/cl_gl.h>
 #endif
 
 /* CONST*/
 
-const int	WIDTH = 800;
-const int	HEIGHT = 800;
-const float	POINT_SIZE = 2.0f;
+// const int	WIDTH = 800;
+// const int	HEIGHT = 800;
+const float	POINT_SIZE = 4.0f;
 
 /* STRUCT */
 
@@ -66,6 +69,7 @@ struct alignas(16) GpuSimulationState
 	float	G = 2.f;
 	float	deltaTime = 0.f;
 	float	time = 0.f;
+	float	colorBlend = 0.f;
 	int		immortal = 1;
 	int		turbulence = 0;
 	int		gravity = 1;
@@ -83,6 +87,10 @@ struct AppState
 	float	lastFrame = 0.f;
 	float	second;
 	size_t	fpsCounter;
+	int	screenWidth = 800;
+	int	screenHeight = 800;
+	int	fbWidth = 800;
+	int	fbHeight = 800;
 	Shape	shape = CUBE;
 	bool	space_pressed = false;
 	bool	r_pressed = false;
@@ -101,6 +109,7 @@ struct psData
 	std::unique_ptr<VBO>	vbo;
 	std::unique_ptr<Shader> shader;
 	unsigned int			particle_number;
+	int				initFrames = 3;
 	cl_platform_id			platform;
 	cl_device_id			device;
 	cl_context				context;

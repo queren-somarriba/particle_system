@@ -1,11 +1,11 @@
 #include "camera.hpp"
 
-Camera::Camera(vect4f pos, vect4f up, float yaw, float pitch) :
-	pos(pos),
+Camera::Camera(vect4f position, vect4f upVector, float startYaw, float startPitch)
+	: pos(position),
 	front(vect4f(0.0f, 0.0f, -1.0f)),
-	worldUp(up),
-	yaw(yaw),
-	pitch(pitch),
+	worldUp(upVector),
+	yaw(startYaw),
+	pitch(startPitch),
 	movementSpeed(SPEED),
 	mouseSensitivity(SENSITIVITY),
 	zoom(ZOOM)

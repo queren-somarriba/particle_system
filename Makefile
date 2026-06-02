@@ -1,7 +1,7 @@
 NAME	= particle_system
 CC		= c++
 
-DEBUG	= 0
+DEBUG	= 1
 
 RED		= \033[1;31m
 GREEN	= \033[1;32m
@@ -10,11 +10,21 @@ ORANGE	= \033[1;33m
 RESET	= \033[0m
 
 ifeq ($(DEBUG), 1)
-	CXXFLAGS	= -Wall -Wextra -Werror -g -march=native -fsanitize=address -fno-omit-frame-pointer
-	LDFLAGS		= -fsanitize=address
+	CXXFLAGS	CXXFLAGS = -Wall -Wextra -Werror -g -march=native -fno-omit-frame-pointer
+	LDFLAGS		=
 else
 	CXXFLAGS	= -Wall -Wextra -Werror -O3 -march=native
 	LDFLAGS		=
+endif
+
+ifeq ($(shell uname), Darwin)
+	LDFLAGS	+= -framework OpenGL -framework OpenCL
+	LDFLAGS	+= -L/usr/local/lib -lglfw
+	CXXFLAGS	+= -I/usr/local/include
+else
+	LDFLAGS	+= -lGL -lOpenCL -lglfw -ldl
+	GLFLAGS	= -lglfw -lGL -lX11 -lpthread -ldl -lXrandr -lXinerama -lXcursor -lXi
+	CLFLAGS	= -L./libs -lOpenCL
 endif
 
 INCLUDES_DIR		= includes
@@ -25,8 +35,6 @@ INCLUDES			= -I$(INCLUDES_DIR) -I$(CLASS_DIR) -I$(EXTERNAL_LIBS_DIR) -I$(MATH_LI
 OBJ_DIR				= obj
 SRCS_DIR			= srcs
 CLASS_CPP			= $(SRCS_DIR)/class
-GLFLAGS				= -lglfw -lGL -lX11 -lpthread -ldl -lXrandr -lXinerama -lXcursor -lXi
-CLFLAGS				= -L./libs -lOpenCL
 
 SRCS		= $(SRCS_DIR)/main.cpp \
 			$(SRCS_DIR)/InputHandler.cpp \

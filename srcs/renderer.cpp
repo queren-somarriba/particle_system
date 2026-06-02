@@ -7,7 +7,7 @@
 #include "InputHandler.hpp"	
 #include "cl.hpp"
 
-GLFWwindow* initWindow()
+GLFWwindow* initWindow(AppState& state)
 {
 	#if defined(__linux__) && !defined(WAYLAND_DISPLAY)
 		glfwInitHint(GLFW_PLATFORM, GLFW_PLATFORM_X11);
@@ -19,11 +19,11 @@ GLFWwindow* initWindow()
 	}
 
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
-	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
+	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 1);
 	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 	glfwWindowHint(GLFW_SAMPLES, 4);
 
-	GLFWwindow* window = glfwCreateWindow(WIDTH, HEIGHT, "Particle_System", NULL, NULL);
+	GLFWwindow* window = glfwCreateWindow(1920, 1080, "Particle_System", NULL, NULL);
 	if (window == NULL)
 	{
 		std::cout << "Failed to create GLFW window" << std::endl;
@@ -32,10 +32,7 @@ GLFWwindow* initWindow()
 	}
 
 	glfwMakeContextCurrent(window);
-	glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
-	glfwSetScrollCallback(window, scroll_callback);
-	glfwSetCursorEnterCallback(window, cursor_enter_callback);
-	glfwSetCursorPosCallback(window, cursor_position_callback);
+
 
 	if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress))
 	{
@@ -43,7 +40,17 @@ GLFWwindow* initWindow()
 		return (NULL);
 	}
 
-	glViewport(0, 0, WIDTH, HEIGHT);
+	int fb_width, fb_height;
+	glfwGetFramebufferSize(window, &fb_width, &fb_height);
+	glViewport(0, 0, fb_width, fb_height);
+	state.fbWidth = fb_width;
+	state.fbHeight = fb_height;
+
+	glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
+	glfwSetScrollCallback(window, scroll_callback);
+	glfwSetCursorEnterCallback(window, cursor_enter_callback);
+	glfwSetCursorPosCallback(window, cursor_position_callback);
+
 	glEnable(GL_BLEND);
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 	glPointSize(POINT_SIZE);
@@ -72,8 +79,17 @@ namespace
 			state.second = 0;
 		}
 
+		float target = state.gpuState.speedColor ? 1.f : 0.f;
+		float speed  = 2.f;
+		float delta  = speed * state.gpuState.deltaTime;
+
+		if (state.gpuState.colorBlend < target)
+			state.gpuState.colorBlend = std::min(state.gpuState.colorBlend + delta, target);
+		else
+			state.gpuState.colorBlend = std::max(state.gpuState.colorBlend - delta, target);
+
 		mat4f view = state.camera.GetViewMatrix();
-		mat4f proj = mat4f::perspective(state.camera.zoom * (float)M_PI / 180.0f, (float)WIDTH/HEIGHT, 0.1f);
+		mat4f proj = mat4f::perspective(state.camera.zoom * (float)M_PI / 180.0f, (float)state.fbWidth/state.fbHeight, 0.1f);
 		mat4f world = proj * view;
 		state.invWorld = world.inverse();
 	}
@@ -81,7 +97,7 @@ namespace
 	void setUniformVal(psData& data)
 	{
 		mat4f view = data.state.camera.GetViewMatrix();
-		mat4f proj = mat4f::perspective(data.state.camera.zoom * (float)M_PI / 180.0f, (float)WIDTH/HEIGHT, 0.1f);	
+		mat4f proj = mat4f::perspective(data.state.camera.zoom * (float)M_PI / 180.0f, (float)data.state.fbWidth/data.state.fbHeight, 0.1f);	
 		data.shader->use();
 		data.shader->setMat4("proj", proj);
 		data.shader->setMat4("view", view);
@@ -90,6 +106,13 @@ namespace
 
 void renderParticles(GLFWwindow* window, psData& data)
 {
+	if (data.initFrames > 0)
+	{
+		data.state.gpuState.cube = (data.state.shape == CUBE) ? 1 : 0;
+		data.state.gpuState.sphere = (data.state.shape == SPHERE) ? 1 : 0;
+		--data.initFrames;
+	}
+
 	processInput(window, data);
 	updateAppState(window, data.state);
 

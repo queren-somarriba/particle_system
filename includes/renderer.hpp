@@ -4,7 +4,7 @@
 #include <GLFW/glfw3.h>
 #include "particle_system.hpp"
 
-GLFWwindow* initWindow();
+GLFWwindow* initWindow(AppState& state);
 
 void updateParticles(psData& data);
 

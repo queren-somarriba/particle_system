@@ -13,4 +13,3 @@ class EBO
 		void	bind();
 		void	unbind();
 };
-

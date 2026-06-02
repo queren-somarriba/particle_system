@@ -11,6 +11,7 @@ typedef struct
 	float	G;
 	float	deltaTime;
 	float	time;
+	float	colorBlend;
 	int		immortal;
 	int		turbulence;
 	int		gravity;
@@ -93,10 +94,10 @@ inline float valueNoise3D(float x, float y, float z)
 
 inline float3 compute_turbulence(float3 pos, float time, float strength, float freq)
 {
-    float ax = valueNoise3D(pos.x * freq + 0.0f,  pos.y * freq + 17.3f, time * freq);
-    float ay = valueNoise3D(pos.x * freq + 53.1f, pos.y * freq + 0.0f,  time * freq + 5.7f);
-    float az = valueNoise3D(pos.x * freq + 91.7f, pos.z * freq + 33.2f, time * freq + 11.3f);
-    return (float3)(ax * strength, ay * strength, az * strength);
+	float ax = valueNoise3D(pos.x * freq + 0.0f,  pos.y * freq + 17.3f, time * freq);
+	float ay = valueNoise3D(pos.x * freq + 53.1f, pos.y * freq + 0.0f,  time * freq + 5.7f);
+	float az = valueNoise3D(pos.x * freq + 91.7f, pos.z * freq + 33.2f, time * freq + 11.3f);
+	return (float3)(ax * strength, ay * strength, az * strength);
 }
 
 // Init Shapes
@@ -163,9 +164,9 @@ inline 	void emitOne(__private float3* pos,
 {
 	float time = state->time;
 	unsigned int seed = id + (unsigned int)(time * 1000.0f);
-	*pos  = state->gCenter.xyz;
+	*pos = state->gCenter.xyz;
 	//velmin + randf() * (velmax - velmin)
-	physics->vel.xyz  = (float3)(
+	physics->vel.xyz = (float3)(
 		-0.05f + extract_random(&seed) * (0.05f - -0.05f),
 		0.2f + extract_random(&seed) * (0.8f - 0.2f),
 		-0.3f + extract_random(&seed) * (0.3f - -0.3f)
@@ -186,8 +187,7 @@ inline 	void emitOne(__private float3* pos,
 inline void PhysicUpdate(__private float3* pos,
 							__private float3* color,
 								__private GpuPhysicalParticle* physics,
-									__constant GpuSimulationState* state
-																		)
+									__constant GpuSimulationState* state)
 {
 	const float G = (state->gravity != 0 ? state->G : 0.f);
 	const float softening = 0.5f;
@@ -245,8 +245,7 @@ inline void computeSpeedColor(__private float3* color, float3 vel)
 
 __kernel void update_particles(__global float* vbo_data, 
 								__global GpuPhysicalParticle* physics,
-								__constant GpuSimulationState* state
-                               )
+									__constant GpuSimulationState* state)
 {
 	int id = get_global_id(0);
 
@@ -282,8 +281,9 @@ __kernel void update_particles(__global float* vbo_data,
 	PhysicUpdate(&pos, &color, &physic, state);
 	physics[id] = physic;
 
-	if (state->speedColor)
-		computeSpeedColor(&color, physic.vel.xyz);
+	float3 speedCol = color;
+	computeSpeedColor(&speedCol, physic.vel.xyz);
+	color = mix(color, speedCol, state->colorBlend);
 
 	vbo_data[vbo_index + 0] = pos.x;
 	vbo_data[vbo_index + 1] = pos.y;
