@@ -2,6 +2,15 @@
 
 A GPU-based 3D particle system built in C++ using OpenGL + OpenCL with GL/CL interoperability, real-time physics simulation, and point-sprite rendering.
 
+<video src="https://imgur.com/a/0XjKGbB" 
+       autoplay 
+       loop 
+       muted 
+       playsinline
+       controls
+       width="100%">
+</video>
+
 ## Dependencies
 
 - OpenGL 4.3+
