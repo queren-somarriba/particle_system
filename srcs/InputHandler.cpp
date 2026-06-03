@@ -98,7 +98,6 @@ void scroll_callback(GLFWwindow* window, double xoffset, double yoffset)
 
 void cursor_enter_callback(GLFWwindow* window, int entered)
 {
-	std::cout << "mouse_enter_callback\n";
 	psData* data = reinterpret_cast<psData*>(glfwGetWindowUserPointer(window));
 	if (entered)
 		data->state.mouse_in_window = true;
@@ -110,7 +109,6 @@ void cursor_position_callback(GLFWwindow* window, double xpos, double ypos)
 {
 	psData* data = reinterpret_cast<psData*>(glfwGetWindowUserPointer(window));
 
-	std::cout << "mouse: " << data->state.mouse_in_window << std::endl;
 	if (!data->state.mouse_in_window || data->state.staticGravity)
 		return;
 

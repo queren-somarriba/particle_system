@@ -50,7 +50,8 @@ GLFWwindow* initWindow(AppState& state)
 	glfwSetScrollCallback(window, scroll_callback);
 	glfwSetCursorEnterCallback(window, cursor_enter_callback);
 	glfwSetCursorPosCallback(window, cursor_position_callback);
-
+	glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_HIDDEN); 
+	
 	glEnable(GL_BLEND);
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 	glPointSize(POINT_SIZE);
