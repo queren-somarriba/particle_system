@@ -1,7 +1,7 @@
 NAME	= particle_system
 CC		= c++
 
-DEBUG	= 1
+DEBUG	= 0
 
 RED		= \033[1;31m
 GREEN	= \033[1;32m

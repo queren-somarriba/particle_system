@@ -2,6 +2,7 @@
 #include "cl.hpp"
 #include <fstream>
 #include <sstream>
+#include <GL/glx.h>
 #ifdef __APPLE__
 	#include <OpenGL/OpenGL.h>
 #endif
