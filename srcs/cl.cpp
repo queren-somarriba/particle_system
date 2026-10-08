@@ -30,6 +30,9 @@ void initOpenCL(psData& data)
 	std::vector<cl_device_id> devices(num_devices);
 	clGetDeviceIDs(data.platform, CL_DEVICE_TYPE_GPU, num_devices, devices.data(), nullptr);
 
+	if (devices.empty())
+		throw std::runtime_error("Error: No OpenCL-capable device found.");
+
 	data.device = devices[0];
 	for (cl_uint i = 0; i < num_devices; i++)
 	{
